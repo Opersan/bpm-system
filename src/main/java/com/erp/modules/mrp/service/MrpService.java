@@ -64,8 +64,6 @@ public class MrpService {
         for (Item item : allItems) {
             BigDecimal demand = demandMap.getOrDefault(item.getId(), BigDecimal.ZERO);
             
-            // Get Total Stock (Sum across all warehouses for simplicity)
-            // In real world, we should consider warehouse locations.
             List<Stock> stocks = stockRepository.findAll().stream()
                     .filter(s -> s.getItem().getId().equals(item.getId()))
                     .collect(Collectors.toList());
@@ -75,7 +73,6 @@ public class MrpService {
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             // Net Requirement = Demand - OnHand
-            // (Ignoring Scheduled Receipts from existing POs for MVP simplicity, or assume they are 0)
             BigDecimal netRequirement = demand.subtract(onHand);
 
             if (netRequirement.compareTo(BigDecimal.ZERO) > 0) {
@@ -97,13 +94,9 @@ public class MrpService {
         List<PlannedOrder> plannedOrders = plannedOrderRepository.findAllById(plannedOrderIds);
         List<PurchaseOrder> createdPos = new ArrayList<>();
 
-        // Group by Supplier (For MVP, just pick the first supplier found or a default one)
-        // Since Item doesn't have a default supplier link in our simple model, 
-        // let's assume all items come from the first supplier in DB for this demo.
         Supplier defaultSupplier = supplierRepository.findAll().stream().findFirst()
                 .orElseThrow(() -> new RuntimeException("No suppliers found to create PO"));
 
-        // Group items into one PO per supplier (here just one PO for all)
         CreatePORequest poRequest = new CreatePORequest();
         poRequest.setSupplierId(defaultSupplier.getId());
         List<PurchaseOrderItemDto> items = new ArrayList<>();
@@ -115,7 +108,7 @@ public class MrpService {
 
             PurchaseOrderItemDto itemDto = new PurchaseOrderItemDto();
             itemDto.setItemId(po.getItem().getId());
-            itemDto.setQuantity(po.getQuantity().intValue()); // PO uses Integer, MRP uses BigDecimal. Casting for MVP.
+            itemDto.setQuantity(po.getQuantity().intValue());
             itemDto.setPrice(po.getItem().getPrice());
             items.add(itemDto);
 

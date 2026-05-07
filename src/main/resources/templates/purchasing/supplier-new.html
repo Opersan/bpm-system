@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title th:text="${pageTitle}">Yeni Tedarikçi</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+    <div class="erp-page">
+        <div class="erp-page-header">
+            <div>
+                <nav class="erp-breadcrumb" aria-label="breadcrumb">
+                    <a th:href="@{/dashboard}" th:text="${breadcrumbs[0]}">Dashboard</a>
+                    <span th:text="${breadcrumbs[1]}">Satın Alma</span>
+                    <span th:text="${breadcrumbs[2]}">Yeni Tedarikçi</span>
+                </nav>
+                <h2 th:text="${pageTitle}">Yeni Tedarikçi</h2>
+                <p>Tedarikçi ana verisini ekleyin.</p>
+            </div>
+            <a th:href="@{/purchasing/orders}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Siparişlere Dön
+            </a>
+        </div>
+
+        <form th:action="@{/purchasing/suppliers}" th:object="${supplierCreateRequest}" method="post" novalidate>
+            <div th:if="${errorMessage}" class="alert alert-danger purchasing-notice">
+                <strong th:text="${errorMessage}">Form hatası</strong>
+                <ul th:if="${#fields.hasAnyErrors()}" class="form-error-list mb-0">
+                    <li th:each="error : ${#fields.errors('*')}" th:text="${error}">Hata</li>
+                </ul>
+            </div>
+
+            <div class="row g-4 align-items-start">
+                <div class="col-xl-8">
+                    <section class="erp-panel form-section">
+                        <div class="form-section__header">
+                            <div>
+                                <h3>Tedarikçi Bilgileri</h3>
+                                <p>Satın alma süreçlerinde kullanılacak temel tedarikçi bilgisini girin.</p>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Tedarikçi Adı <span class="text-danger">*</span></label>
+                                <input id="name" type="text" class="form-control" th:field="*{name}"
+                                       th:classappend="${#fields.hasErrors('name')} ? ' is-invalid'">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Ad hatası</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="contactEmail" class="form-label">İletişim E-postası <span class="text-danger">*</span></label>
+                                <input id="contactEmail" type="email" class="form-control" th:field="*{contactEmail}"
+                                       th:classappend="${#fields.hasErrors('contactEmail')} ? ' is-invalid'">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('contactEmail')}" th:errors="*{contactEmail}">E-posta hatası</div>
+                            </div>
+                            <div class="col-12">
+                                <label for="address" class="form-label">Adres <span class="text-danger">*</span></label>
+                                <textarea id="address" rows="3" class="form-control" th:field="*{address}"
+                                          th:classappend="${#fields.hasErrors('address')} ? ' is-invalid'"></textarea>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}" th:errors="*{address}">Adres hatası</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="col-xl-4">
+                    <aside class="erp-panel purchase-summary">
+                        <div class="purchase-summary__header">
+                            <h3>Tedarikçi Özeti</h3>
+                            <span>Master Data</span>
+                        </div>
+                        <div class="summary-row"><span>Ad</span><strong th:text="${supplierCreateRequest.name != null and !supplierCreateRequest.name.isBlank() ? supplierCreateRequest.name : '-'}">-</strong></div>
+                        <div class="summary-row"><span>E-posta</span><strong th:text="${supplierCreateRequest.contactEmail != null and !supplierCreateRequest.contactEmail.isBlank() ? supplierCreateRequest.contactEmail : '-'}">-</strong></div>
+                        <div class="summary-row"><span>Kullanım</span><strong>Yeni satın alma siparişlerinde seçilebilir</strong></div>
+                        <div class="summary-row summary-row--total"><span>Adres</span><strong th:text="${supplierCreateRequest.address != null and !supplierCreateRequest.address.isBlank() ? supplierCreateRequest.address : '-'}">-</strong></div>
+
+                        <div class="purchase-actions">
+                            <a th:href="@{/purchasing/orders}" class="btn btn-light">Vazgeç</a>
+                            <button type="submit" class="btn btn-primary">Tedarikçi Oluştur</button>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

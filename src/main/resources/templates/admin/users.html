@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title th:text="${pageTitle}">Kullanıcı Yönetimi</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+    <div class="erp-page">
+        <div class="erp-page-header">
+            <div>
+                <nav class="erp-breadcrumb" aria-label="breadcrumb">
+                    <a th:href="@{/dashboard}" th:text="${breadcrumbs[0]}">Dashboard</a>
+                    <span th:text="${breadcrumbs[1]}">Yönetim</span>
+                    <span th:text="${breadcrumbs[2]}">Kullanıcılar</span>
+                </nav>
+                <h2 th:text="${pageTitle}">Kullanıcı Yönetimi</h2>
+                <p>Kullanıcıları ve rollerini yönetin.</p>
+            </div>
+            <a th:href="@{/admin/users/new}" class="btn btn-primary">
+                <i class="fas fa-user-plus me-2"></i>Yeni Kullanıcı
+            </a>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success purchasing-notice" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-danger purchasing-notice" th:text="${errorMessage}"></div>
+
+        <section class="erp-panel mt-4">
+            <div class="table-responsive">
+                <table class="table erp-table no-datatable align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th>Kullanıcı Adı</th>
+                        <th>Ad Soyad</th>
+                        <th>E-posta</th>
+                        <th>Rol</th>
+                        <th>Durum</th>
+                        <th>Oluşturulma Tarihi</th>
+                        <th class="text-end">Aksiyonlar</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="user : ${users}">
+                        <td class="fw-semibold" th:text="${user.username}">admin</td>
+                        <td th:text="${user.fullName}">Sistem Yöneticisi</td>
+                        <td th:text="${user.email}">admin@erp.com</td>
+                        <td>
+                            <span class="erp-badge" th:classappend="${' erp-badge--' + user.role.cssClass}" th:text="${user.role.label}">Admin</span>
+                        </td>
+                        <td>
+                            <span class="status-pill" th:classappend="${user.active} ? ' status-pill--active' : ' status-pill--inactive'" th:text="${user.active} ? 'Aktif' : 'Pasif'">Aktif</span>
+                        </td>
+                        <td th:text="${#temporals.format(user.createdAt, 'dd.MM.yyyy HH:mm')}">01.05.2026 09:00</td>
+                        <td class="text-end">
+                            <div class="admin-user-actions">
+                                <form class="admin-user-role-form" th:action="@{/admin/users/{id}/change-role(id=${user.id})}" method="post">
+                                    <select name="role" class="form-select form-select-sm" th:disabled="${!@userService.canChangeRole(user)}">
+                                        <option th:each="roleItem : ${roles}"
+                                                th:value="${roleItem.name()}"
+                                                th:text="${roleItem.label}"
+                                                th:selected="${roleItem == user.role}">Rol</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" th:disabled="${!@userService.canChangeRole(user)}">Güncelle</button>
+                                </form>
+                                <form th:action="@{/admin/users/{id}/toggle-active(id=${user.id})}" method="post">
+                                    <button type="submit" class="btn btn-sm"
+                                            th:classappend="${user.active} ? ' btn-outline-danger' : ' btn-outline-success'"
+                                            th:text="${user.active} ? 'Pasif Yap' : 'Aktif Yap'"
+                                            th:disabled="${!@userService.canToggleActive(user, currentUser)}">Pasif Yap</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+</body>
+</html>

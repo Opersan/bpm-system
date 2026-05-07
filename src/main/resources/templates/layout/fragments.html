@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${title}">ERP System</title>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -15,50 +17,120 @@
 </head>
 <body>
 
-<nav th:fragment="sidebar" class="sidebar">
-    <a class="sidebar-brand" th:href="@{/dashboard}">
-        <div class="sidebar-brand-icon rotate-n-15">
-            <i class="fas fa-industry"></i>
+<span th:fragment="navIcon(iconKey)" class="sb-icon">
+    <th:block th:switch="${iconKey}">
+        <svg th:case="'dashboard'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        <svg th:case="'procurement'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+        <svg th:case="'planning'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        <svg th:case="'production'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M2 12h2M20 12h2M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41"/>
+        </svg>
+        <svg th:case="'admin'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2l7 4v6c0 5-3.5 9.5-7 10-3.5-.5-7-5-7-10V6l7-4z"/>
+            <path d="M9.5 12l1.5 1.5L14.5 10"/>
+        </svg>
+        <svg th:case="*" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+        </svg>
+    </th:block>
+</span>
+
+<nav th:fragment="sidebar" class="sidebar" id="sidebar">
+
+    <!-- ── Brand / Logo ─────────────────────────────────── -->
+    <div class="sb-brand">
+        <a th:href="@{/dashboard}" class="sb-brand-link">
+            <div class="sb-logo" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 4.25 26.25 10v12L16 27.75 5.75 22V10L16 4.25Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M10.5 21.25h11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                    <path d="M11.5 18.25v-4M16 18.25v-7.5M20.5 18.25v-5.25" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M11.5 14.25 16 10.75l4.5 2.25" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+                    <circle cx="11.5" cy="14.25" r="1.15" fill="currentColor"/>
+                    <circle cx="16" cy="10.75" r="1.15" fill="currentColor"/>
+                    <circle cx="20.5" cy="13" r="1.15" fill="currentColor"/>
+                </svg>
+            </div>
+            <div class="sb-brand-text">
+                <span class="sb-brand-title">İş Yönetim</span>
+                <span class="sb-brand-sub">Sistemi</span>
+            </div>
+        </a>
+    </div>
+
+    <!-- ── Scrollable Menu Area ───────────────────────────── -->
+    <div class="sb-menu-scroll">
+
+        <!-- Dashboard -->
+        <ul class="sb-menu mt-2">
+            <li class="sb-item"
+                th:each="item : ${visibleNavigationItems}"
+                th:if="${!item.hasChildren()}"
+                th:classappend="${item.active} ? ' active'">
+                <a th:href="${item.url}" class="sb-link">
+                    <span th:replace="~{layout/fragments :: navIcon(${item.iconKey})}"></span>
+                    <span class="sb-label" th:text="${item.label}">Dashboard</span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- Section heading -->
+        <div class="sb-section-label" th:if="${#lists.size(visibleNavigationItems) > 1}">MODÜLLER</div>
+
+        <ul class="sb-menu">
+
+            <li class="sb-group"
+                th:each="item : ${visibleNavigationItems}"
+                th:if="${item.hasChildren()}"
+                th:classappend="${item.expanded} ? ' open'">
+                <button type="button" class="sb-group-btn"
+                        data-bs-toggle="collapse"
+                        th:attr="data-bs-target=${'#grp-' + item.key},aria-expanded=${item.expanded ? 'true' : 'false'}">
+                    <span th:replace="~{layout/fragments :: navIcon(${item.iconKey})}"></span>
+                    <span class="sb-label" th:text="${item.label}">Modül</span>
+                    <span class="sb-chevron">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </span>
+                </button>
+                <ul class="sb-sub collapse"
+                    th:id="${'grp-' + item.key}"
+                    th:classappend="${item.expanded} ? ' show'">
+                    <li th:each="child : ${item.children}">
+                        <a th:href="${child.url}" class="sb-sub-link"
+                           th:classappend="${child.active} ? ' active'">
+                            <span class="sb-sub-dot"></span>
+                            <span th:text="${child.label}">Alt menü</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+        </ul>
+    </div><!-- /.sb-menu-scroll -->
+
+    <!-- ── Sidebar Footer ───────────────────────────────── -->
+    <div class="sb-footer">
+        <div class="sb-footer-inner">
+            <span class="sb-footer-dot"></span>
+            <div>
+                <div class="sb-footer-version">v1.0</div>
+                <div class="sb-footer-desc">Kurumsal Yönetim Platformu</div>
+            </div>
         </div>
-        <div class="sidebar-brand-text mx-3">ERP System</div>
-    </a>
+    </div>
 
-    <ul class="nav flex-column">
-        <li class="nav-item">
-            <a class="nav-link" th:classappend="${activePage == 'dashboard'} ? 'active'" th:href="@{/dashboard}">
-                <i class="fas fa-fw fa-tachometer-alt"></i>
-                <span>Kontrol Paneli</span>
-            </a>
-        </li>
-        <hr class="sidebar-divider my-0" style="border-top: 1px solid rgba(255,255,255,0.15);">
-        
-        <div class="sidebar-heading text-white-50 px-3 mt-3 mb-1" style="font-size: 0.75rem;">Modüller</div>
-
-        <li class="nav-item">
-            <a class="nav-link" th:classappend="${activePage == 'procurement'} ? 'active'" th:href="@{/procurement}">
-                <i class="fas fa-fw fa-shopping-cart"></i>
-                <span>Satın Alma</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" th:classappend="${activePage == 'inventory'} ? 'active'" th:href="@{/inventory}">
-                <i class="fas fa-fw fa-boxes"></i>
-                <span>Stok Yönetimi</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" th:classappend="${activePage == 'manufacturing'} ? 'active'" th:href="@{/manufacturing}">
-                <i class="fas fa-fw fa-cogs"></i>
-                <span>Üretim</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" th:classappend="${activePage == 'mrp'} ? 'active'" th:href="@{/mrp}">
-                <i class="fas fa-fw fa-chart-line"></i>
-                <span>MRP</span>
-            </a>
-        </li>
-    </ul>
 </nav>
 
 <nav th:fragment="topbar" class="topbar mb-4 static-top shadow">
@@ -67,23 +139,47 @@
     </button>
 
     <ul class="navbar-nav ms-auto">
-        <li class="nav-item dropdown no-arrow">
-            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <span class="mr-2 d-none d-lg-inline text-gray-600 small" sec:authentication="name">User</span>
-                <img class="img-profile rounded-circle" src="https://ui-avatars.com/api/?name=User&background=random" style="height: 2rem; width: 2rem;">
+        <li class="nav-item dropdown no-arrow topbar-user-dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center gap-3" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="text-end d-none d-lg-block">
+                    <div class="topbar-user-name" th:text="${currentUser.fullName}">Sistem Yöneticisi</div>
+                    <div class="topbar-user-role">
+                        <span class="erp-badge" th:classappend="${' erp-badge--' + currentUser.role.cssClass}" th:text="${currentUser.role.label}">Admin</span>
+                    </div>
+                </div>
+                <img class="img-profile rounded-circle"
+                     th:src="${'https://ui-avatars.com/api/?name=' + #strings.replace(currentUser.fullName, ' ', '+') + '&background=4e73df&color=ffffff'}"
+                     alt="Kullanıcı avatarı"
+                     style="height: 2.4rem; width: 2.4rem;">
             </a>
-            <div class="dropdown-menu dropdown-menu-end shadow animated--grow-in" aria-labelledby="userDropdown">
-                <a class="dropdown-item" href="#">
-                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                    Profile
+            <div class="dropdown-menu dropdown-menu-end shadow animated--grow-in topbar-user-menu" aria-labelledby="userDropdown">
+                <div class="dropdown-header topbar-user-card">
+                    <strong th:text="${currentUser.fullName}">Sistem Yöneticisi</strong>
+                    <span th:text="${'@' + currentUser.username}">@admin</span>
+                    <span class="erp-badge align-self-start" th:classappend="${' erp-badge--' + currentUser.role.cssClass}" th:text="${currentUser.role.label}">Admin</span>
+                </div>
+
+                <th:block th:if="${@authorizationService.canAccessUserManagement()}">
+                    <a class="dropdown-item" th:href="@{/admin/users}">
+                        <i class="fas fa-users-cog fa-sm fa-fw mr-2 text-gray-400"></i>
+                        Kullanıcı Yönetimi
+                    </a>
+                    <div class="dropdown-divider"></div>
+                </th:block>
+
+                <div class="dropdown-header admin-switch-note">Demo Kullanıcı Değiştir</div>
+                <a class="dropdown-item d-flex align-items-center justify-content-between"
+                   th:each="demoUser : ${demoUsers}"
+                   th:href="@{/auth/switch-user(username=${demoUser.username},redirect=${currentPath})}">
+                    <span>
+                        <strong class="d-block" th:text="${demoUser.fullName}">Kullanıcı</strong>
+                        <small class="text-muted" th:text="${'@' + demoUser.username}">@admin</small>
+                    </span>
+                    <span class="d-flex align-items-center gap-2">
+                        <span class="erp-badge" th:classappend="${' erp-badge--' + demoUser.role.cssClass}" th:text="${demoUser.role.label}">Rol</span>
+                        <i th:if="${demoUser.username == currentUser.username}" class="fas fa-check text-success"></i>
+                    </span>
                 </a>
-                <div class="dropdown-divider"></div>
-                <form th:action="@{/logout}" method="post">
-                    <button class="dropdown-item" type="submit">
-                        <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-                        Logout
-                    </button>
-                </form>
             </div>
         </li>
     </ul>

@@ -9,4 +9,5 @@ public class PurchaseOrderItemDto {
     private Long itemId;
     private Integer quantity;
     private BigDecimal price;
+    private BigDecimal vatRate;
 }

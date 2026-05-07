@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title th:text="${pageTitle}">Envanter</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+
+    <div class="erp-page">
+        <div class="erp-page-header">
+            <div>
+                <nav class="erp-breadcrumb" aria-label="breadcrumb">
+                    <a th:href="@{/dashboard}" th:text="${breadcrumbs[0]}">Dashboard</a>
+                    <span th:text="${breadcrumbs[1]}">Planlama</span>
+                    <span th:text="${breadcrumbs[2]}">Envanter</span>
+                </nav>
+                <h2 th:text="${pageTitle}">Envanter</h2>
+                <p>Stok ve kritik seviyeleri izleyin.</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <a th:if="${@authorizationService.canCreatePlanningItem()}" th:href="@{/planning/items/new}" class="btn btn-outline-secondary">
+                    <i class="fas fa-box-open me-2"></i>Yeni Kalem
+                </a>
+                <a th:href="@{/planning/mrp}" class="btn btn-outline-primary">
+                    <i class="fas fa-magic me-2"></i>MRP Planlama
+                </a>
+            </div>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success purchasing-notice" th:text="${successMessage}"></div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-xl col-md-6" th:each="card : ${summaryCards}">
+                <div class="erp-stat-card" th:classappend="${' erp-stat-card--' + card.variant}">
+                    <span th:text="${card.label}">Kart</span>
+                    <strong th:text="${card.value}">0</strong>
+                    <i th:class="${card.icon}"></i>
+                </div>
+            </div>
+        </div>
+
+        <section class="erp-panel filter-panel">
+            <form th:action="@{/planning/inventory}" method="get">
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-3 col-md-6">
+                        <label for="search" class="form-label">Arama</label>
+                        <input id="search" name="search" type="search" class="form-control"
+                               placeholder="Malzeme kodu veya adı" th:value="${filters.search}">
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="category" class="form-label">Kategori</label>
+                        <select id="category" name="category" class="form-select">
+                            <option value="">Tüm kategoriler</option>
+                            <option th:each="category : ${categories}"
+                                    th:value="${category}"
+                                    th:text="${category}"
+                                    th:selected="${category == filters.category}">Kategori</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="warehouse" class="form-label">Depo</label>
+                        <select id="warehouse" name="warehouse" class="form-select">
+                            <option value="">Tüm depolar</option>
+                            <option th:each="warehouse : ${warehouses}"
+                                    th:value="${warehouse}"
+                                    th:text="${warehouse}"
+                                    th:selected="${warehouse == filters.warehouse}">Depo</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="status" class="form-label">Durum</label>
+                        <select id="status" name="status" class="form-select">
+                            <option value="">Tüm durumlar</option>
+                            <option th:each="status : ${statuses}"
+                                    th:value="${status.name()}"
+                                    th:text="${status.label}"
+                                    th:selected="${filters.status != null and status == filters.status}">Durum</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-3">
+                        <div class="planning-filter-actions">
+                            <div class="form-check">
+                                <input id="criticalOnly" name="criticalOnly" value="true" class="form-check-input"
+                                       type="checkbox" th:checked="${filters.criticalOnly}">
+                                <label for="criticalOnly" class="form-check-label">Kritik stokları göster</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Filtrele</button>
+                            <a th:href="@{/planning/inventory}" class="btn btn-light">Temizle</a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <section class="erp-panel mt-4">
+            <div class="table-responsive">
+                <table class="table erp-table no-datatable align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Malzeme Kodu</th>
+                            <th>Malzeme Adı</th>
+                            <th>Kategori</th>
+                            <th class="text-end">Mevcut Stok</th>
+                            <th class="text-end">Minimum Stok</th>
+                            <th class="text-end">Maksimum Stok</th>
+                            <th>Birim</th>
+                            <th>Depo</th>
+                            <th>Durum</th>
+                            <th>Son Hareket Tarihi</th>
+                            <th class="text-end">Aksiyonlar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="item, iter : ${inventoryItems}">
+                            <td class="fw-semibold" th:text="${item.materialCode}">BKR-TEL-120</td>
+                            <td th:text="${item.materialName}">Bakır Tel</td>
+                            <td th:text="${item.category}">Hammadde</td>
+                            <td class="text-end" th:text="${#numbers.formatDecimal(item.currentStock, 1, 2)}">0</td>
+                            <td class="text-end" th:text="${#numbers.formatDecimal(item.minimumStock, 1, 2)}">0</td>
+                            <td class="text-end" th:text="${#numbers.formatDecimal(item.maximumStock, 1, 2)}">0</td>
+                            <td th:text="${item.unit}">kg</td>
+                            <td th:text="${item.warehouse}">Ana Depo</td>
+                            <td>
+                                <span class="erp-badge"
+                                      th:classappend="${' erp-badge--' + item.status.cssClass}"
+                                      th:text="${item.status.label}">Yeterli</span>
+                            </td>
+                            <td th:text="${#temporals.format(item.lastMovementDate, 'dd.MM.yyyy')}">01.05.2026</td>
+                            <td class="text-end">
+                                <div class="dropdown">
+                                    <button class="btn btn-light btn-sm icon-button" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <button class="dropdown-item" type="button" data-bs-toggle="modal"
+                                                    th:data-bs-target="'#inventoryDetailModal-' + ${iter.index}">
+                                                Görüntüle
+                                            </button>
+                                        </li>
+                                        <li><button class="dropdown-item" type="button">Stok Hareketleri</button></li>
+                                        <li>
+                                            <a class="dropdown-item" th:href="@{/planning/mrp(materialCode=${item.materialCode})}">MRP’ye Ekle</a>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div class="modal fade" th:id="'inventoryDetailModal-' + ${iter.index}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                        <div class="modal-content erp-modal">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" th:text="${item.materialName}">Malzeme Detayı</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                                            </div>
+                                            <div class="modal-body text-start">
+                                                <div class="detail-grid">
+                                                    <div><span>Kod</span><strong th:text="${item.materialCode}">Kod</strong></div>
+                                                    <div><span>Kategori</span><strong th:text="${item.category}">Kategori</strong></div>
+                                                    <div><span>Depo</span><strong th:text="${item.warehouse}">Depo</strong></div>
+                                                    <div><span>Mevcut Stok</span><strong th:text="${#numbers.formatDecimal(item.currentStock, 1, 2) + ' ' + item.unit}">0</strong></div>
+                                                    <div><span>Minimum Stok</span><strong th:text="${#numbers.formatDecimal(item.minimumStock, 1, 2) + ' ' + item.unit}">0</strong></div>
+                                                    <div><span>Maksimum Stok</span><strong th:text="${#numbers.formatDecimal(item.maximumStock, 1, 2) + ' ' + item.unit}">0</strong></div>
+                                                    <div><span>Durum</span><strong th:text="${item.status.label}">Durum</strong></div>
+                                                    <div><span>Son Hareket</span><strong th:text="${#temporals.format(item.lastMovementDate, 'dd.MM.yyyy')}">Tarih</strong></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:if="${#lists.isEmpty(inventoryItems)}" class="empty-state">
+                <i class="fas fa-search"></i>
+                <strong>Kayıt bulunamadı</strong>
+                <span>Filtreleri değiştirerek tekrar deneyin.</span>
+            </div>
+        </section>
+
+        <section class="erp-panel planning-warehouse-summary mt-4" th:if="${!#lists.isEmpty(warehouseSummaries)}">
+            <div class="form-section__header">
+                <div>
+                    <h3>Depo Özeti</h3>
+                    <p>Filtrelenen sonuçların depo bazlı kısa görünümü.</p>
+                </div>
+            </div>
+            <div class="warehouse-summary-grid">
+                <div class="warehouse-summary-card" th:each="warehouse : ${warehouseSummaries}">
+                    <span th:text="${warehouse.warehouse}">Ana Depo</span>
+                    <strong th:text="${warehouse.itemCount + ' kalem'}">0 kalem</strong>
+                    <small th:text="${warehouse.criticalItemCount + ' kritik kalem'}">0 kritik</small>
+                </div>
+            </div>
+        </section>
+    </div>
+
+</div>
+
+</body>
+</html>

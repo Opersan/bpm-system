@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title th:text="${pageTitle}">Yetkisiz Erişim</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+    <div class="erp-page">
+        <section class="erp-panel unauthorized-panel">
+            <div class="empty-state">
+                <i class="fas fa-lock"></i>
+                <strong>Yetkisiz Erişim</strong>
+                <span>Bu sayfaya erişmek için gerekli yetkiye sahip değilsiniz.</span>
+                <a th:href="@{/dashboard}" class="btn btn-primary mt-3">Dashboard’a Dön</a>
+            </div>
+        </section>
+    </div>
+</div>
+
+</body>
+</html>

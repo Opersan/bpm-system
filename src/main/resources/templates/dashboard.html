@@ -7,180 +7,184 @@
 <body>
 
 <div layout:fragment="content">
-
-    <!-- KPI Cards Row -->
-    <div class="row">
-
-        <!-- Total Orders Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Toplam Sipariş</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${totalOrders}">0</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
-                        </div>
+    <div class="dashboard-shell">
+        <section class="erp-panel dashboard-hero mb-4">
+            <div class="dashboard-hero__content">
+                <span class="dashboard-hero__eyebrow">Günlük operasyon özeti</span>
+                <p class="dashboard-hero__lead">Satın alma, stok ve üretim akışının anlık görünümünü sade bir operasyon ekranında izleyin.</p>
+                <div class="dashboard-hero__chips">
+                    <div class="dashboard-hero__chip">
+                        <span>Bekleyen satın alma</span>
+                        <strong th:text="${pendingOrders}">0</strong>
+                    </div>
+                    <div class="dashboard-hero__chip">
+                        <span>İzlenen stok kalemi</span>
+                        <strong th:text="${totalStock}">0</strong>
+                    </div>
+                    <div class="dashboard-hero__chip">
+                        <span>Açık iş emri</span>
+                        <strong th:text="${totalWorkOrders}">0</strong>
                     </div>
                 </div>
             </div>
-        </div>
+            <div class="dashboard-hero__actions">
+                <a th:if="${@authorizationService.canCreatePurchaseOrder()}" th:href="@{/purchasing/new}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Yeni Satın Alma
+                </a>
+                <a th:if="${@authorizationService.canCreateWorkOrder()}" th:href="@{/production/work-orders/new}" class="btn btn-outline-primary">
+                    <i class="fas fa-industry me-2"></i>Yeni İş Emri
+                </a>
+                <a th:href="@{/planning/inventory}" class="btn btn-light">
+                    <i class="fas fa-boxes-stacked me-2"></i>Stok Görünümü
+                </a>
+            </div>
+        </section>
 
-        <!-- Total Stock Items Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Stok Kalemi</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${totalStock}">0</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-boxes fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
+        <div class="row g-3 mb-4">
+            <div class="col-xl-3 col-md-6">
+                <article class="dashboard-kpi dashboard-kpi--ink h-100">
+                    <span>Toplam satın alma</span>
+                    <strong th:text="${totalOrders}">0</strong>
+                    <p>Tüm sipariş ve taslak kayıtları.</p>
+                    <i class="fas fa-cart-shopping"></i>
+                </article>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <article class="dashboard-kpi dashboard-kpi--sage h-100">
+                    <span>Stok kalemi</span>
+                    <strong th:text="${totalStock}">0</strong>
+                    <p>Planlama ekranında izlenen toplam stok.</p>
+                    <i class="fas fa-boxes-stacked"></i>
+                </article>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <article class="dashboard-kpi dashboard-kpi--steel h-100">
+                    <span>İş emri</span>
+                    <strong th:text="${totalWorkOrders}">0</strong>
+                    <p>Üretim tarafında takip edilen toplam emir.</p>
+                    <i class="fas fa-clipboard-list"></i>
+                </article>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <article class="dashboard-kpi dashboard-kpi--amber h-100">
+                    <span>Acil takip</span>
+                    <strong th:text="${pendingOrders}">0</strong>
+                    <p>Onay veya işlem bekleyen satın alma kaydı.</p>
+                    <i class="fas fa-clock"></i>
+                </article>
             </div>
         </div>
 
-        <!-- Work Orders Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                İş Emirleri</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${totalWorkOrders}">0</div>
+        <div class="row g-4 mb-4">
+            <div class="col-xl-8">
+                <section class="erp-panel dashboard-panel h-100">
+                    <div class="dashboard-panel__header">
+                        <div>
+                            <span class="dashboard-panel__eyebrow">Trend</span>
+                            <h2>Aylık satın alma akışı</h2>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
-                        </div>
+                        <span class="dashboard-panel__caption">Son 12 ay</span>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pending Orders Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Bekleyen Siparişler</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${pendingOrders}">0</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clock fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Charts and Tables Row -->
-    <div class="row">
-
-        <!-- Area Chart -->
-        <div class="col-xl-8 col-lg-7">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Aylık Sipariş Trendi</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-area">
+                    <div class="dashboard-chart-area">
                         <canvas id="orderTrendChart"></canvas>
                     </div>
-                </div>
+                </section>
             </div>
-        </div>
-
-        <!-- Pie Chart -->
-        <div class="col-xl-4 col-lg-5">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Sipariş Durumu</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-pie pt-4 pb-2">
+            <div class="col-xl-4">
+                <section class="erp-panel dashboard-panel dashboard-panel--status h-100">
+                    <div class="dashboard-panel__header">
+                        <div>
+                            <span class="dashboard-panel__eyebrow">Dağılım</span>
+                            <h2>Sipariş durumu</h2>
+                        </div>
+                    </div>
+                    <div class="dashboard-chart-pie">
                         <canvas id="orderStatusChart"></canvas>
                     </div>
-                </div>
+                    <div class="dashboard-status-list">
+                        <div>
+                            <span>Bekleyen</span>
+                            <strong th:text="${pendingOrders}">0</strong>
+                        </div>
+                        <div>
+                            <span>Düşük stok</span>
+                            <strong th:text="${#lists.size(lowStockItems)}">0</strong>
+                        </div>
+                        <div>
+                            <span>Üretim emri</span>
+                            <strong th:text="${totalWorkOrders}">0</strong>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
-    </div>
 
-    <!-- Tables Row -->
-    <div class="row">
-
-        <!-- Recent Orders -->
-        <div class="col-xl-8 col-lg-7">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Son Siparişler</h6>
-                </div>
-                <div class="card-body">
+        <div class="row g-4">
+            <div class="col-xl-8">
+                <section class="erp-panel dashboard-panel h-100">
+                    <div class="dashboard-panel__header">
+                        <div>
+                            <span class="dashboard-panel__eyebrow">Liste</span>
+                            <h2>Son satın alma kayıtları</h2>
+                        </div>
+                    </div>
                     <div class="table-responsive">
-                        <table class="table table-bordered no-datatable" width="100%">
+                        <table class="table erp-table no-datatable dashboard-table mb-0">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th>Sipariş No</th>
                                     <th>Tedarikçi</th>
                                     <th>Durum</th>
-                                    <th>Tutar</th>
+                                    <th class="text-end">Tutar</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr th:each="order : ${recentOrders}">
-                                    <td th:text="${order.id}">1</td>
+                                    <td class="fw-semibold" th:text="${'SAS-' + order.id}">SAS-1</td>
                                     <td th:text="${order.supplier.name}">Supplier</td>
                                     <td>
-                                        <span class="badge" 
-                                              th:classappend="${order.status.toString() == 'APPROVED' ? 'bg-success' : 
-                                                               order.status.toString() == 'DRAFT' ? 'bg-warning' : 'bg-secondary'}"
-                                              th:text="${order.status}">Status</span>
+                                        <span class="erp-badge"
+                                              th:classappend="${' erp-badge--' + order.status.cssClass}"
+                                              th:text="${order.status.label}">Durum</span>
                                     </td>
-                                    <td th:text="${#numbers.formatDecimal(order.totalAmount, 1, 2)} + ' ₺'">0.00 ₺</td>
+                                    <td class="text-end fw-semibold" th:text="${#numbers.formatDecimal(order.totalAmount, 1, 2)} + ' ₺'">0.00 ₺</td>
                                 </tr>
                                 <tr th:if="${#lists.isEmpty(recentOrders)}">
-                                    <td colspan="4" class="text-center">Henüz sipariş yok</td>
+                                    <td colspan="4" class="text-center text-muted py-4">Henüz sipariş yok.</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-                </div>
+                </section>
             </div>
-        </div>
-
-        <!-- Low Stock Alert -->
-        <div class="col-xl-4 col-lg-5">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-danger">Düşük Stok Uyarısı</h6>
-                </div>
-                <div class="card-body">
-                    <div th:each="stock : ${lowStockItems}" class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="text-xs font-weight-bold" th:text="${stock.item.name}">Item</span>
-                            <span class="badge bg-danger" th:text="${stock.onHand}">0</span>
-                        </div>
-                        <div class="progress mt-1" style="height: 5px;">
-                            <div class="progress-bar bg-danger" role="progressbar" 
-                                 th:style="'width: ' + ${stock.onHand * 10} + '%'"
-                                 th:attr="aria-valuenow=${stock.onHand}"></div>
+            <div class="col-xl-4">
+                <section class="erp-panel dashboard-panel dashboard-panel--stock h-100">
+                    <div class="dashboard-panel__header">
+                        <div>
+                            <span class="dashboard-panel__eyebrow">Risk</span>
+                            <h2>Düşük stok uyarıları</h2>
                         </div>
                     </div>
-                    <div th:if="${#lists.isEmpty(lowStockItems)}" class="text-center text-muted">
-                        <i class="fas fa-check-circle fa-3x mb-2"></i>
-                        <p>Tüm stoklar yeterli seviyede</p>
+                    <div class="dashboard-stock-list" th:if="${!#lists.isEmpty(lowStockItems)}">
+                        <div th:each="stock : ${lowStockItems}" class="dashboard-stock-item">
+                            <div class="dashboard-stock-item__top">
+                                <div>
+                                    <strong th:text="${stock.item.name}">Item</strong>
+                                    <span th:text="${stock.item.code}">KOD</span>
+                                </div>
+                                <em th:text="${stock.onHand}">0</em>
+                            </div>
+                            <div class="dashboard-stock-track">
+                                <div class="dashboard-stock-fill" th:style="'width: ' + ${T(java.lang.Math).min(stock.onHand * 10, 100)} + '%'" th:attr="aria-valuenow=${stock.onHand}"></div>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                    <div th:if="${#lists.isEmpty(lowStockItems)}" class="dashboard-empty-state">
+                        <i class="fas fa-check-circle"></i>
+                        <strong>Stok dengesi sağlıklı</strong>
+                        <span>Kritik eşiğin altına düşen kalem bulunmuyor.</span>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
@@ -198,8 +202,12 @@
                 datasets: [{
                     label: 'Siparişler',
                     data: [12, 19, 15, 25, 22, 30, 28, 35, 32, 38, 42, 45],
-                    borderColor: 'rgb(78, 115, 223)',
-                    backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                    borderColor: '#335c67',
+                    backgroundColor: 'rgba(51, 92, 103, 0.10)',
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#335c67',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
                     tension: 0.4,
                     fill: true
                 }]
@@ -214,7 +222,21 @@
                 },
                 scales: {
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.18)'
+                        },
+                        ticks: {
+                            color: '#64748b'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#64748b'
+                        }
                     }
                 }
             }
@@ -231,10 +253,10 @@
                 datasets: [{
                     data: [35, 15, 25, 25],
                     backgroundColor: [
-                        'rgb(28, 200, 138)',
-                        'rgb(246, 194, 62)',
-                        'rgb(54, 185, 204)',
-                        'rgb(231, 74, 59)'
+                        '#335c67',
+                        '#9e2a2b',
+                        '#7c9aa5',
+                        '#d6dee5'
                     ],
                     borderWidth: 2,
                     borderColor: '#fff'
@@ -242,67 +264,23 @@
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
+                cutout: '72%',
                 plugins: {
                     legend: {
                         position: 'bottom',
+                        labels: {
+                            color: '#64748b',
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            padding: 18
+                        }
                     }
                 }
             }
         });
     }
 </script>
-
-</body>
-</html>
-
-        <!-- Area Chart -->
-        <div class="col-xl-8 col-lg-7">
-            <div class="card shadow mb-4">
-                <!-- Card Header - Dropdown -->
-                <div
-                    class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Earnings Overview</h6>
-                </div>
-                <!-- Card Body -->
-                <div class="card-body">
-                    <div class="chart-area">
-                        <canvas id="myAreaChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pie Chart -->
-        <div class="col-xl-4 col-lg-5">
-            <div class="card shadow mb-4">
-                <!-- Card Header - Dropdown -->
-                <div
-                    class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Revenue Sources</h6>
-                </div>
-                <!-- Card Body -->
-                <div class="card-body">
-                    <div class="chart-pie pt-4 pb-2">
-                        <canvas id="myPieChart"></canvas>
-                    </div>
-                    <div class="mt-4 text-center small">
-                        <span class="mr-2">
-                            <i class="fas fa-circle text-primary"></i> Direct
-                        </span>
-                        <span class="mr-2">
-                            <i class="fas fa-circle text-success"></i> Social
-                        </span>
-                        <span class="mr-2">
-                            <i class="fas fa-circle text-info"></i> Referral
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-</div>
 
 </body>
 </html>

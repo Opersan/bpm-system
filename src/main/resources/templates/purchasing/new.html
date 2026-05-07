@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title>Yeni Satın Alma Siparişi</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+
+    <div class="erp-page">
+        <div class="erp-page-header">
+            <div>
+                <nav class="erp-breadcrumb" aria-label="breadcrumb">
+                    <a th:href="@{/dashboard}">Dashboard</a>
+                    <span>Satın Alma</span>
+                    <span>Yeni Satın Alma Siparişi</span>
+                </nav>
+                <h2>Yeni Satın Alma Siparişi</h2>
+                <p>Tedarikçi, teslim ve kalem bilgilerini girin.</p>
+            </div>
+            <a th:href="@{/purchasing/orders}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Siparişlere Dön
+            </a>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success purchasing-notice" th:text="${successMessage}"></div>
+
+        <form id="purchaseOrderForm" th:action="@{/purchasing/orders}" method="post">
+            <div class="row g-4 align-items-start">
+                <div class="col-xl-8">
+                    <section class="erp-panel form-section">
+                        <div class="form-section__header">
+                            <div>
+                                <h3>Sipariş Bilgileri</h3>
+                                <p>Temel sipariş ve tedarikçi bilgilerini girin.</p>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="supplierId" class="form-label">Tedarikçi <span class="text-danger">*</span></label>
+                                <select id="supplierId" name="supplierId" class="form-select" required>
+                                    <option value="">Tedarikçi seçiniz</option>
+                                    <option th:each="supplier : ${suppliers}"
+                                            th:value="${supplier.id}"
+                                            th:text="${supplier.name}"
+                                            th:selected="${selectedSupplierId != null and supplier.id == selectedSupplierId}"
+                                            th:data-email="${supplier.contactEmail}"
+                                            th:data-address="${supplier.address}">Tedarikçi</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="orderDate" class="form-label">Sipariş Tarihi</label>
+                                <input id="orderDate" name="orderDate" type="date" class="form-control"
+                                       th:value="${#temporals.format(today, 'yyyy-MM-dd')}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="expectedDeliveryDate" class="form-label">Beklenen Teslim <span class="text-danger">*</span></label>
+                                <input id="expectedDeliveryDate" name="expectedDeliveryDate" type="date" class="form-control" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="currency" class="form-label">Para Birimi</label>
+                                <select id="currency" name="currency" class="form-select">
+                                    <option value="TRY">TRY</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="USD">USD</option>
+                                </select>
+                            </div>
+                            <div class="col-md-9">
+                                <label for="description" class="form-label">Açıklama</label>
+                                <textarea id="description" name="description" class="form-control" rows="2" placeholder="Siparişe ilişkin kısa not veya teslimat açıklaması"></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="erp-panel form-section">
+                        <div class="form-section__header form-section__header--inline">
+                            <div>
+                                <h3>Sipariş Kalemleri</h3>
+                                <p>Malzeme, miktar, fiyat ve KDV bilgilerini düzenleyin.</p>
+                            </div>
+                            <button id="addPurchaseItem" type="button" class="btn btn-outline-primary">
+                                <i class="fas fa-plus me-2"></i>Kalem Ekle
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table erp-table no-datatable purchase-items-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Malzeme</th>
+                                        <th>Kod</th>
+                                        <th>Miktar</th>
+                                        <th>Birim</th>
+                                        <th>Birim Fiyat</th>
+                                        <th>KDV %</th>
+                                        <th class="text-end">Satır Toplamı</th>
+                                        <th class="text-end">Aksiyon</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="purchaseItemsBody">
+                                    <tr class="purchase-item-row">
+                                        <td class="min-w-220">
+                                            <select class="form-select form-select-sm item-select" name="itemId" required>
+                                                <option value="">Malzeme seçiniz</option>
+                                                <option th:each="item : ${items}"
+                                                        th:value="${item.id}"
+                                                        th:text="${item.name}"
+                                                        th:selected="${materialCode != null and item.code == materialCode}"
+                                                        th:data-code="${item.code}"
+                                                        th:data-uom="${item.uom}"
+                                                        th:data-price="${item.price}">Malzeme</option>
+                                            </select>
+                                        </td>
+                                        <td class="item-code text-muted">-</td>
+                                        <td class="min-w-120"><input type="number" class="form-control form-control-sm item-quantity" name="quantity" min="1" step="1" value="1" required></td>
+                                        <td class="item-uom">-</td>
+                                        <td class="min-w-140"><input type="number" class="form-control form-control-sm item-price" name="price" min="0" step="0.01" value="0" required></td>
+                                        <td class="min-w-100"><input type="number" class="form-control form-control-sm item-vat" name="vatRate" min="0" step="1" value="20" required></td>
+                                        <td class="item-line-total text-end fw-semibold">₺0,00</td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-light btn-sm icon-button remove-purchase-item" aria-label="Kalemi sil">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="erp-panel form-section">
+                        <div class="form-section__header">
+                            <div>
+                                <h3>Tedarikçi Bilgi Kartı</h3>
+                                <p>Seçilen tedarikçinin kayıtlı iletişim bilgileri.</p>
+                            </div>
+                        </div>
+                        <div id="supplierInfoEmpty" class="empty-inline">Tedarikçi seçildiğinde detay bilgileri burada gösterilir.</div>
+                        <div id="supplierInfoCard" class="supplier-card d-none"></div>
+                    </section>
+                </div>
+
+                <div class="col-xl-4">
+                    <aside class="erp-panel purchase-summary">
+                        <div class="purchase-summary__header">
+                            <h3>Sipariş Özeti</h3>
+                            <span id="summaryCurrency">TRY</span>
+                        </div>
+                        <div class="summary-row"><span>Ara Toplam</span><strong id="summarySubtotal">₺0,00</strong></div>
+                        <div class="summary-row"><span>KDV Toplamı</span><strong id="summaryVat">₺0,00</strong></div>
+                        <div class="summary-row summary-row--total"><span>Genel Toplam</span><strong id="summaryGrandTotal">₺0,00</strong></div>
+                        <div class="summary-meta"><span>Kalem sayısı</span><strong id="summaryItemCount">0</strong></div>
+
+                        <div class="purchase-actions">
+                            <a th:href="@{/purchasing/orders}" class="btn btn-light">Vazgeç</a>
+                            <button type="submit" class="btn btn-outline-primary" name="submitAction" value="draft">Taslak Kaydet</button>
+                            <button type="submit" class="btn btn-primary" name="submitAction" value="pending_approval">Onaya Gönder</button>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+<th:block layout:fragment="extra-scripts">
+    <script th:src="@{/js/purchasing.form.js}"></script>
+</th:block>
+
+</body>
+</html>

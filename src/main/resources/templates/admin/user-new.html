@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title th:text="${pageTitle}">Yeni Kullanıcı Oluştur</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+    <div class="erp-page">
+        <div class="erp-page-header">
+            <div>
+                <nav class="erp-breadcrumb" aria-label="breadcrumb">
+                    <a th:href="@{/dashboard}" th:text="${breadcrumbs[0]}">Dashboard</a>
+                    <span th:text="${breadcrumbs[1]}">Yönetim</span>
+                    <span th:text="${breadcrumbs[2]}">Kullanıcılar</span>
+                    <span th:text="${breadcrumbs[3]}">Yeni Kullanıcı</span>
+                </nav>
+                <h2 th:text="${pageTitle}">Yeni Kullanıcı Oluştur</h2>
+                <p>Kullanıcı bilgilerini girip rol atayın.</p>
+            </div>
+            <a th:href="@{/admin/users}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Kullanıcılara Dön
+            </a>
+        </div>
+
+        <form th:action="@{/admin/users}" th:object="${userCreateRequest}" method="post" novalidate>
+            <div th:if="${errorMessage}" class="alert alert-danger purchasing-notice">
+                <strong th:text="${errorMessage}">Form hatası</strong>
+                <ul th:if="${#fields.hasAnyErrors()}" class="form-error-list mb-0">
+                    <li th:each="error : ${#fields.errors('*')}" th:text="${error}">Hata</li>
+                </ul>
+            </div>
+
+            <div class="row g-4 align-items-start">
+                <div class="col-xl-8">
+                    <section class="erp-panel form-section">
+                        <div class="form-section__header">
+                            <div>
+                                <h3>Kullanıcı Bilgileri</h3>
+                                <p>Temel kullanıcı ve iletişim bilgilerini doldurun.</p>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="username" class="form-label">Kullanıcı Adı <span class="text-danger">*</span></label>
+                                <input id="username" type="text" class="form-control" th:field="*{username}"
+                                       th:classappend="${#fields.hasErrors('username')} ? ' is-invalid'">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">Kullanıcı adı hatası</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="fullName" class="form-label">Ad Soyad <span class="text-danger">*</span></label>
+                                <input id="fullName" type="text" class="form-control" th:field="*{fullName}"
+                                       th:classappend="${#fields.hasErrors('fullName')} ? ' is-invalid'">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}">Ad soyad hatası</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">E-posta <span class="text-danger">*</span></label>
+                                <input id="email" type="email" class="form-control" th:field="*{email}"
+                                       th:classappend="${#fields.hasErrors('email')} ? ' is-invalid'">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">E-posta hatası</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="role" class="form-label">Rol <span class="text-danger">*</span></label>
+                                <select id="role" class="form-select" th:field="*{role}"
+                                        th:classappend="${#fields.hasErrors('role')} ? ' is-invalid'">
+                                    <option value="">Rol seçiniz</option>
+                                    <option th:each="roleItem : ${roles}" th:value="${roleItem}" th:text="${roleItem.label}">Rol</option>
+                                </select>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('role')}" th:errors="*{role}">Rol hatası</div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check mt-2">
+                                    <input id="active" type="checkbox" class="form-check-input" th:field="*{active}">
+                                    <label for="active" class="form-check-label">Kullanıcı aktif olarak oluşturulsun</label>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="col-xl-4">
+                    <aside class="erp-panel purchase-summary">
+                        <div class="purchase-summary__header">
+                            <h3>Kullanıcı Özeti</h3>
+                            <span>Demo</span>
+                        </div>
+                        <div class="summary-row"><span>Kullanıcı Adı</span><strong th:text="${userCreateRequest.username != null and !userCreateRequest.username.isBlank() ? userCreateRequest.username : '-'}">-</strong></div>
+                        <div class="summary-row"><span>Ad Soyad</span><strong th:text="${userCreateRequest.fullName != null and !userCreateRequest.fullName.isBlank() ? userCreateRequest.fullName : '-'}">-</strong></div>
+                        <div class="summary-row"><span>E-posta</span><strong th:text="${userCreateRequest.email != null and !userCreateRequest.email.isBlank() ? userCreateRequest.email : '-'}">-</strong></div>
+                        <div class="summary-row"><span>Rol</span><strong th:text="${userCreateRequest.role != null ? userCreateRequest.role.label : '-'}">-</strong></div>
+                        <div class="summary-row summary-row--total"><span>Durum</span><strong th:text="${userCreateRequest.active} ? 'Aktif' : 'Pasif'">Aktif</strong></div>
+
+                        <div class="purchase-actions">
+                            <a th:href="@{/admin/users}" class="btn btn-light">Vazgeç</a>
+                            <button type="submit" class="btn btn-primary">Kullanıcı Oluştur</button>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

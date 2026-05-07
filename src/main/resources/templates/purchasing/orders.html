@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title>Satın Alma Siparişleri</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+
+    <div class="erp-page">
+        <div class="erp-page-header">
+            <div>
+                <nav class="erp-breadcrumb" aria-label="breadcrumb">
+                    <a th:href="@{/dashboard}">Dashboard</a>
+                    <span>Satın Alma</span>
+                    <span>Satın Alma Siparişleri</span>
+                </nav>
+                <h2>Satın Alma Siparişleri</h2>
+                <p>Siparişleri durum ve tedarikçiye göre izleyin.</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <a th:if="${@authorizationService.canCreateSupplier()}" th:href="@{/purchasing/suppliers/new}" class="btn btn-outline-secondary">
+                    <i class="fas fa-truck-field me-2"></i>Yeni Tedarikçi
+                </a>
+                <a th:if="${@authorizationService.canCreatePurchaseOrder()}" th:href="@{/purchasing/new}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Yeni Sipariş
+                </a>
+            </div>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success purchasing-notice" th:text="${successMessage}"></div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-xl col-md-6" th:each="card : ${summaryCards}">
+                <div class="erp-stat-card" th:classappend="${' erp-stat-card--' + card.variant}">
+                    <span th:text="${card.label}">Kart</span>
+                    <strong th:text="${card.value}">0</strong>
+                    <i th:class="${card.icon}"></i>
+                </div>
+            </div>
+        </div>
+
+        <section class="erp-panel filter-panel">
+            <form th:action="@{/purchasing/orders}" method="get">
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-3 col-md-6">
+                        <label for="search" class="form-label">Arama</label>
+                        <input id="search" name="search" type="search" class="form-control"
+                               placeholder="Sipariş no veya tedarikçi" th:value="${filters.search}">
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="status" class="form-label">Durum</label>
+                        <select id="status" name="status" class="form-select">
+                            <option value="">Tüm durumlar</option>
+                            <option th:each="status : ${statuses}"
+                                    th:value="${status.name()}"
+                                    th:text="${status.label}"
+                                    th:selected="${filters.status != null and filters.status == status}">Durum</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label for="approvalStatus" class="form-label">Onay Durumu</label>
+                        <select id="approvalStatus" name="approvalStatus" class="form-select">
+                            <option value="">Tüm onaylar</option>
+                            <option th:each="approval : ${approvalStatuses}"
+                                    th:value="${approval.name()}"
+                                    th:text="${approval.label}"
+                                    th:selected="${filters.approvalStatus != null and filters.approvalStatus == approval}">Onay</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <label for="supplierId" class="form-label">Tedarikçi</label>
+                        <select id="supplierId" name="supplierId" class="form-select">
+                            <option value="">Tüm tedarikçiler</option>
+                            <option th:each="supplier : ${suppliers}"
+                                    th:value="${supplier.id}"
+                                    th:text="${supplier.name}"
+                                    th:selected="${filters.supplierId != null and filters.supplierId == supplier.id}">Tedarikçi</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2">
+                        <div class="planning-filter-actions">
+                            <button type="submit" class="btn btn-primary">Filtrele</button>
+                            <a th:href="@{/purchasing/orders}" class="btn btn-light">Temizle</a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <section class="erp-panel mt-4">
+            <div class="table-responsive">
+                <table class="table erp-table no-datatable align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Sipariş No</th>
+                            <th>Tedarikçi</th>
+                            <th>Sipariş Tarihi</th>
+                            <th>Teslim Tarihi</th>
+                            <th>Durum</th>
+                            <th>Onay</th>
+                            <th class="text-end">Toplam Tutar</th>
+                            <th>Oluşturan</th>
+                            <th class="text-end">Aksiyonlar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="order, iter : ${orders}">
+                            <td>
+                                <button type="button" class="link-button" data-bs-toggle="modal"
+                                        th:data-bs-target="'#orderDetailModal-' + ${iter.index}"
+                                        th:text="${'SAS-' + order.id}">SAS-1</button>
+                            </td>
+                            <td th:text="${order.supplier.name}">Tedarikçi</td>
+                            <td th:text="${order.orderDate != null ? #temporals.format(order.orderDate, 'dd.MM.yyyy') : '-'}">-</td>
+                            <td th:text="${order.expectedDeliveryDate != null ? #temporals.format(order.expectedDeliveryDate, 'dd.MM.yyyy') : '-'}">-</td>
+                            <td><span class="erp-badge" th:classappend="${' erp-badge--' + order.status.cssClass}" th:text="${order.status.label}">Durum</span></td>
+                            <td><span class="erp-badge" th:classappend="${' erp-badge--' + order.approvalStatus.cssClass}" th:text="${order.approvalStatus.label}">Onay</span></td>
+                            <td class="text-end fw-semibold" th:text="${order.totalAmount != null ? #numbers.formatDecimal(order.totalAmount, 1, 2) + ' ' + order.currency : '0,00'}">0,00</td>
+                            <td th:text="${order.createdBy != null ? order.createdBy : '-'}">admin</td>
+                            <td class="text-end">
+                                <div class="dropdown">
+                                    <button class="btn btn-light btn-sm icon-button" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><button class="dropdown-item" type="button" data-bs-toggle="modal" th:data-bs-target="'#orderDetailModal-' + ${iter.index}">Görüntüle</button></li>
+                                        <li><button class="dropdown-item disabled" type="button">Düzenle</button></li>
+                                        <li th:if="${@authorizationService.canCreatePurchaseOrder()}">
+                                            <form th:action="@{/purchasing/orders/submit}" method="post">
+                                                <input type="hidden" name="id" th:value="${order.id}">
+                                                <button class="dropdown-item" type="submit" th:disabled="${order.status.name() != 'DRAFT'}">Onaya Gönder</button>
+                                            </form>
+                                        </li>
+                                        <li th:if="${@authorizationService.canCreatePurchaseOrder()}"><hr class="dropdown-divider"></li>
+                                        <li th:if="${@authorizationService.canCreatePurchaseOrder()}">
+                                            <form th:action="@{/purchasing/orders/cancel}" method="post">
+                                                <input type="hidden" name="id" th:value="${order.id}">
+                                                <button class="dropdown-item text-danger" type="submit" th:disabled="${order.status.name() == 'CANCELLED' or order.status.name() == 'CLOSED'}">İptal Et</button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div class="modal fade" th:id="'orderDetailModal-' + ${iter.index}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                                        <div class="modal-content erp-modal">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" th:text="${'Satın Alma Siparişi ' + order.id}">Sipariş Detayı</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                                            </div>
+                                            <div class="modal-body text-start">
+                                                <div class="detail-grid mb-4">
+                                                    <div><span>Sipariş No</span><strong th:text="${'SAS-' + order.id}">SAS</strong></div>
+                                                    <div><span>Tedarikçi</span><strong th:text="${order.supplier.name}">Tedarikçi</strong></div>
+                                                    <div><span>Durum</span><strong th:text="${order.status.label}">Durum</strong></div>
+                                                    <div><span>Sipariş Tarihi</span><strong th:text="${order.orderDate != null ? #temporals.format(order.orderDate, 'dd.MM.yyyy') : '-'}">-</strong></div>
+                                                    <div><span>Teslim Tarihi</span><strong th:text="${order.expectedDeliveryDate != null ? #temporals.format(order.expectedDeliveryDate, 'dd.MM.yyyy') : '-'}">-</strong></div>
+                                                    <div><span>Toplam</span><strong th:text="${order.totalAmount != null ? #numbers.formatDecimal(order.totalAmount, 1, 2) + ' ' + order.currency : '0,00'}">0</strong></div>
+                                                </div>
+                                                <div class="table-responsive">
+                                                    <table class="table erp-table no-datatable mb-0">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Malzeme</th>
+                                                                <th>Kod</th>
+                                                                <th class="text-end">Miktar</th>
+                                                                <th>Birim</th>
+                                                                <th class="text-end">Birim Fiyat</th>
+                                                                <th class="text-end">KDV %</th>
+                                                                <th class="text-end">Satır Toplamı</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr th:each="line : ${order.items}">
+                                                                <td th:text="${line.item.name}">Malzeme</td>
+                                                                <td th:text="${line.item.code}">Kod</td>
+                                                                <td class="text-end" th:text="${line.quantity}">0</td>
+                                                                <td th:text="${line.item.uom}">Adet</td>
+                                                                <td class="text-end" th:text="${#numbers.formatDecimal(line.price, 1, 2)}">0</td>
+                                                                <td class="text-end" th:text="${#numbers.formatDecimal(line.vatRate, 1, 2)}">20</td>
+                                                                <td class="text-end fw-semibold" th:text="${#numbers.formatDecimal(line.lineTotal, 1, 2)}">0</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:if="${#lists.isEmpty(orders)}" class="empty-state">
+                <i class="fas fa-search"></i>
+                <strong>Kayıt bulunamadı</strong>
+                <span>Filtreleri değiştirerek tekrar deneyin.</span>
+            </div>
+        </section>
+    </div>
+
+</div>
+
+</body>
+</html>

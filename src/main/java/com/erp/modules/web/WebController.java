@@ -36,7 +36,7 @@ public class WebController {
         model.addAttribute("totalStock", inventoryService.getAllStock().size());
         model.addAttribute("totalWorkOrders", manufacturingService.getAllWorkOrders().size());
         model.addAttribute("pendingOrders", procurementService.getAllOrders().stream()
-            .filter(o -> o.getStatus().toString().equals("DRAFT") || o.getStatus().toString().equals("APPROVED"))
+            .filter(o -> o.getStatus().toString().equals("DRAFT") || o.getStatus().toString().equals("PENDING_APPROVAL"))
             .count());
         
         // Recent orders for table
@@ -58,27 +58,17 @@ public class WebController {
     
     @GetMapping("/procurement")
     public String procurement(Model model) {
-        model.addAttribute("pageTitle", "Satın Alma Siparişleri");
-        model.addAttribute("activePage", "procurement");
-        model.addAttribute("orders", procurementService.getAllOrders());
-        return "procurement/list";
+        return "redirect:/purchasing/orders";
     }
 
     @GetMapping("/procurement/new")
     public String newOrder(Model model) {
-        model.addAttribute("pageTitle", "Yeni Satın Alma Siparişi");
-        model.addAttribute("activePage", "procurement");
-        model.addAttribute("suppliers", procurementService.getAllSuppliers());
-        model.addAttribute("items", procurementService.getAllItems());
-        return "procurement/form";
+        return "redirect:/purchasing/new";
     }
 
     @GetMapping("/inventory")
     public String inventory(Model model) {
-        model.addAttribute("pageTitle", "Stok Durumu");
-        model.addAttribute("activePage", "inventory");
-        model.addAttribute("stocks", inventoryService.getAllStock());
-        return "inventory/stock";
+        return "redirect:/planning/inventory";
     }
 
     @GetMapping("/inventory/receive")
@@ -93,31 +83,21 @@ public class WebController {
 
     @GetMapping("/manufacturing")
     public String manufacturing(Model model) {
-        model.addAttribute("pageTitle", "İş Emirleri");
-        model.addAttribute("activePage", "manufacturing");
-        model.addAttribute("workOrders", manufacturingService.getAllWorkOrders());
-        return "manufacturing/work-orders";
+        return "redirect:/production/work-orders";
     }
 
     @GetMapping("/manufacturing/new")
     public String newWorkOrder(Model model) {
-        model.addAttribute("pageTitle", "Yeni İş Emri");
-        model.addAttribute("activePage", "manufacturing");
-        model.addAttribute("items", manufacturingService.getItemsWithBOM());
-        return "manufacturing/form";
+        return "redirect:/production/work-orders/new";
     }
 
     @GetMapping("/mrp")
     public String mrp(Model model) {
-        model.addAttribute("pageTitle", "MRP Çalıştırmaları");
-        model.addAttribute("activePage", "mrp");
-        return "mrp/runs";
+        return "redirect:/planning/mrp";
     }
     
     @GetMapping("/mrp/run")
     public String runMrp(Model model) {
-        model.addAttribute("pageTitle", "MRP Çalıştır");
-        model.addAttribute("activePage", "mrp");
-        return "mrp/run";
+        return "redirect:/planning/mrp";
     }
 }

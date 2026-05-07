@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title th:text="${pageTitle}">İş Emri Oluştur</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+
+    <div class="erp-page">
+        <div class="erp-page-header">
+            <div>
+                <nav class="erp-breadcrumb" aria-label="breadcrumb">
+                    <a th:href="@{/dashboard}" th:text="${breadcrumbs[0]}">Dashboard</a>
+                    <span th:text="${breadcrumbs[1]}">Üretim</span>
+                    <span th:text="${breadcrumbs[2]}">İş Emri Oluştur</span>
+                </nav>
+                <h2 th:text="${pageTitle}">İş Emri Oluştur</h2>
+                <p>Ürün, hat ve termin bilgisini girin.</p>
+            </div>
+            <a th:href="@{/production/work-orders}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>İş Emirlerine Dön
+            </a>
+        </div>
+
+        <div th:if="${errorMessage}" class="alert alert-danger purchasing-notice">
+            <strong th:text="${errorMessage}">Form hatası</strong>
+            <ul th:if="${#fields.hasAnyErrors()}" class="form-error-list mb-0">
+                <li th:each="error : ${#fields.errors('*')}" th:text="${error}">Hata</li>
+            </ul>
+        </div>
+
+        <form id="workOrderCreateForm" th:action="@{/production/work-orders}" th:object="${workOrderRequest}" method="post" novalidate>
+            <div class="row g-4 align-items-start">
+                <div class="col-xl-8">
+                    <section class="erp-panel form-section">
+                        <div class="form-section__header">
+                            <div>
+                                <h3>Üretim Bilgileri</h3>
+                                <p>Ürün, miktar, öncelik ve hat planını tanımlayın.</p>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="productCode" class="form-label">Ürün <span class="text-danger">*</span></label>
+                                <select id="productCode" class="form-select" th:field="*{productCode}"
+                                        th:classappend="${#fields.hasErrors('productCode')} ? ' is-invalid'">
+                                    <option value="">Ürün seçiniz</option>
+                                    <option th:each="product : ${products}"
+                                            th:value="${product.code}"
+                                            th:text="${product.name}">Ürün</option>
+                                </select>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('productCode')}" th:errors="*{productCode}">Ürün hatası</div>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="productCodeDisplay" class="form-label">Ürün Kodu</label>
+                                <input id="productCodeDisplay" type="text" class="form-control" readonly
+                                       th:value="${selectedProduct != null ? selectedProduct.code : ''}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="plannedQuantity" class="form-label">Planlanan Miktar <span class="text-danger">*</span></label>
+                                <input id="plannedQuantity" type="number" min="0.01" step="0.01" class="form-control"
+                                       th:field="*{plannedQuantity}"
+                                       th:classappend="${#fields.hasErrors('plannedQuantity')} ? ' is-invalid'">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('plannedQuantity')}" th:errors="*{plannedQuantity}">Miktar hatası</div>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="unit" class="form-label">Birim</label>
+                                <input id="unit" type="text" class="form-control" th:field="*{unit}" readonly>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="priority" class="form-label">Öncelik <span class="text-danger">*</span></label>
+                                <select id="priority" class="form-select" th:field="*{priority}"
+                                        th:classappend="${#fields.hasErrors('priority')} ? ' is-invalid'">
+                                    <option value="">Öncelik seçiniz</option>
+                                    <option th:each="priorityItem : ${priorities}"
+                                            th:value="${priorityItem}"
+                                            th:text="${priorityItem.label}">Öncelik</option>
+                                </select>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('priority')}" th:errors="*{priority}">Öncelik hatası</div>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="productionLineCode" class="form-label">Üretim Hattı <span class="text-danger">*</span></label>
+                                <select id="productionLineCode" class="form-select" th:field="*{productionLineCode}"
+                                        th:classappend="${#fields.hasErrors('productionLineCode')} ? ' is-invalid'">
+                                    <option value="">Hat seçiniz</option>
+                                    <option th:each="lineItem : ${productionLines}"
+                                            th:value="${lineItem.code}"
+                                            th:text="${lineItem.name}">Hat</option>
+                                </select>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('productionLineCode')}" th:errors="*{productionLineCode}">Hat hatası</div>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="responsible" class="form-label">Sorumlu <span class="text-danger">*</span></label>
+                                <select id="responsible" class="form-select" th:field="*{responsible}"
+                                        th:classappend="${#fields.hasErrors('responsible')} ? ' is-invalid'">
+                                    <option value="">Sorumlu seçiniz</option>
+                                    <option th:each="user : ${responsibleUsers}" th:value="${user}" th:text="${user}">Sorumlu</option>
+                                </select>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('responsible')}" th:errors="*{responsible}">Sorumlu hatası</div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="erp-panel form-section">
+                        <div class="form-section__header">
+                            <div>
+                                <h3>Planlama Bilgileri</h3>
+                                <p>İş emrinin takvim, vardiya ve açıklama detaylarını girin.</p>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="plannedStartDate" class="form-label">Planlanan Başlangıç Tarihi <span class="text-danger">*</span></label>
+                                <input id="plannedStartDate" type="date" class="form-control" th:field="*{plannedStartDate}"
+                                       th:classappend="${#fields.hasErrors('plannedStartDate')} ? ' is-invalid'">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('plannedStartDate')}" th:errors="*{plannedStartDate}">Başlangıç tarihi hatası</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="plannedEndDate" class="form-label">Planlanan Bitiş Tarihi <span class="text-danger">*</span></label>
+                                <input id="plannedEndDate" type="date" class="form-control" th:field="*{plannedEndDate}"
+                                       th:classappend="${#fields.hasErrors('plannedEndDate')} ? ' is-invalid'">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('plannedEndDate')}" th:errors="*{plannedEndDate}">Bitiş tarihi hatası</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="shift" class="form-label">Vardiya <span class="text-danger">*</span></label>
+                                <select id="shift" class="form-select" th:field="*{shift}"
+                                        th:classappend="${#fields.hasErrors('shift')} ? ' is-invalid'">
+                                    <option value="">Vardiya seçiniz</option>
+                                    <option th:each="shiftItem : ${shifts}" th:value="${shiftItem}" th:text="${shiftItem}">Vardiya</option>
+                                </select>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('shift')}" th:errors="*{shift}">Vardiya hatası</div>
+                            </div>
+                            <div class="col-12">
+                                <label for="description" class="form-label">Açıklama</label>
+                                <textarea id="description" class="form-control" rows="3" th:field="*{description}"
+                                          placeholder="İş emrine ilişkin operasyon, müşteri veya planlama notları"></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="erp-panel form-section">
+                        <div class="form-section__header">
+                            <div>
+                                <h3>Ürün Bilgi Kartı</h3>
+                                <p>Seçilen ürünün temel üretim karakteristiklerini izleyin.</p>
+                            </div>
+                        </div>
+                        <div id="productInfoEmpty" class="empty-inline" th:classappend="${selectedProduct != null} ? ' d-none'">
+                            Ürün seçildiğinde ürün kodu, grup, süre ve reçete durumu burada gösterilir.
+                        </div>
+                        <div id="productInfoCard" class="supplier-card" th:classappend="${selectedProduct == null} ? ' d-none'">
+                            <div class="supplier-card__title" id="productInfoTitle" th:text="${selectedProduct != null ? selectedProduct.name : ''}">Ürün</div>
+                            <div class="supplier-card__grid">
+                                <div><span>Ürün Kodu</span><strong id="productInfoCode" th:text="${selectedProduct != null ? selectedProduct.code : '-'}">TRF-1600</strong></div>
+                                <div><span>Ürün Grubu</span><strong id="productInfoGroup" th:text="${selectedProduct != null ? selectedProduct.productGroup : '-'}">Güç Trafosu</strong></div>
+                                <div><span>Standart Üretim Süresi</span><strong id="productInfoDuration" th:text="${selectedProduct != null ? #numbers.formatDecimal(selectedProduct.standardProductionHours, 1, 1) + ' saat' : '-'}">96 saat</strong></div>
+                                <div><span>Varsayılan Birim</span><strong id="productInfoUnit" th:text="${selectedProduct != null ? selectedProduct.defaultUnit : '-'}">Adet</strong></div>
+                                <div><span>Reçete/BOM Durumu</span><strong id="productInfoBom" th:text="${selectedProduct != null ? selectedProduct.bomStatusLabel : '-'}">Reçete Hazır</strong></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="erp-panel form-section">
+                        <div class="form-section__header">
+                            <div>
+                                <h3>Üretim Hattı Bilgi Kartı</h3>
+                                <p>Seçilen hattın kapasite ve uygunluk durumunu görüntüleyin.</p>
+                            </div>
+                        </div>
+                        <div id="lineInfoEmpty" class="empty-inline" th:classappend="${selectedProductionLine != null} ? ' d-none'">
+                            Üretim hattı seçildiğinde hat kodu, kapasite, ekip ve uygunluk bilgileri burada gösterilir.
+                        </div>
+                        <div id="lineInfoCard" class="supplier-card" th:classappend="${selectedProductionLine == null} ? ' d-none'">
+                            <div class="supplier-card__title" id="lineInfoTitle" th:text="${selectedProductionLine != null ? selectedProductionLine.name : ''}">Hat</div>
+                            <div class="supplier-card__grid">
+                                <div><span>Hat Kodu</span><strong id="lineInfoCode" th:text="${selectedProductionLine != null ? selectedProductionLine.code : '-'}">MNT-01</strong></div>
+                                <div><span>Kapasite</span><strong id="lineInfoCapacity" th:text="${selectedProductionLine != null ? #numbers.formatDecimal(selectedProductionLine.capacity, 1, 0) + ' ' + selectedProductionLine.capacityUnit : '-'}">5 adet/hafta</strong></div>
+                                <div><span>Mevcut Durum</span><strong id="lineInfoStatus" th:text="${selectedProductionLine != null ? selectedProductionLine.status.label : '-'}">Meşgul</strong></div>
+                                <div><span>Sorumlu Ekip</span><strong id="lineInfoTeam" th:text="${selectedProductionLine != null ? selectedProductionLine.responsibleTeam : '-'}">Montaj Operasyon Ekibi</strong></div>
+                                <div><span>Uygunluk Durumu</span><strong id="lineInfoSuitability" th:text="${selectedProductionLine != null ? selectedProductionLine.suitabilityLabel : '-'}">Planlanabilir</strong></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="erp-panel form-section">
+                        <div class="form-section__header form-section__header--inline">
+                            <div>
+                                <h3>Malzeme İhtiyaçları</h3>
+                                <p>Mock BOM verisine göre ihtiyaç ve stok durumunu inceleyin.</p>
+                            </div>
+                            <div class="production-inline-actions">
+                                <a id="mrpActionInline" class="btn btn-outline-primary d-none"
+                                   th:href="@{/planning/mrp(productCode=${workOrderRequest.productCode},quantity=${workOrderRequest.plannedQuantity})}">
+                                    <i class="fas fa-diagram-project me-2"></i>MRP'ye Gönder
+                                </a>
+                                <button id="procurementPlaceholderAction" type="button" class="btn btn-outline-secondary d-none" disabled>
+                                    Eksikler için Satın Alma Talebi Oluştur
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table erp-table no-datatable mb-0">
+                                <thead>
+                                <tr>
+                                    <th>Malzeme Kodu</th>
+                                    <th>Malzeme Adı</th>
+                                    <th class="text-end">Gerekli Miktar</th>
+                                    <th class="text-end">Mevcut Stok</th>
+                                    <th class="text-end">Eksik Miktar</th>
+                                    <th>Birim</th>
+                                    <th>Durum</th>
+                                </tr>
+                                </thead>
+                                <tbody id="materialRequirementsBody">
+                                <tr th:each="material : ${materialRequirements}"
+                                    th:classappend="${material.attentionRequired} ? ' production-material-row--attention' : ''">
+                                    <td th:text="${material.materialCode}">MAT-CU-120</td>
+                                    <td th:text="${material.materialName}">Bakır Tel</td>
+                                    <td class="text-end" th:text="${#numbers.formatDecimal(material.requiredQuantity, 1, 2)}">0</td>
+                                    <td class="text-end" th:text="${#numbers.formatDecimal(material.availableStock, 1, 2)}">0</td>
+                                    <td class="text-end fw-semibold" th:text="${#numbers.formatDecimal(material.shortageQuantity, 1, 2)}">0</td>
+                                    <td th:text="${material.unit}">kg</td>
+                                    <td>
+                                        <span class="erp-badge"
+                                              th:classappend="${' erp-badge--' + material.status.cssClass}"
+                                              th:text="${material.status.label}">Yeterli</span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div id="materialRequirementsEmpty" class="empty-state" th:classappend="${!#lists.isEmpty(materialRequirements)} ? ' d-none'">
+                            <i class="fas fa-box-open"></i>
+                            <strong>Henüz malzeme hesabı oluşmadı</strong>
+                            <span>Ürün ve miktar seçildiğinde malzeme ihtiyaçları burada listelenecek.</span>
+                        </div>
+
+                        <div id="materialRequirementsAlert" class="production-banner d-none"></div>
+                    </section>
+                </div>
+
+                <div class="col-xl-4">
+                    <aside class="erp-panel purchase-summary">
+                        <div class="purchase-summary__header">
+                            <h3>İş Emri Özeti</h3>
+                            <span id="summaryStatusHint">Hazırlık</span>
+                        </div>
+                        <div class="summary-row"><span>Ürün</span><strong id="summaryProduct" th:text="${summary.product}">-</strong></div>
+                        <div class="summary-row"><span>Miktar</span><strong id="summaryQuantity" th:text="${summary.quantity}">1 Adet</strong></div>
+                        <div class="summary-row"><span>Hat</span><strong id="summaryLine" th:text="${summary.line}">Montaj Hattı</strong></div>
+                        <div class="summary-row"><span>Başlangıç</span><strong id="summaryStart" th:text="${summary.start}">01.05.2026</strong></div>
+                        <div class="summary-row"><span>Bitiş</span><strong id="summaryEnd" th:text="${summary.end}">05.05.2026</strong></div>
+                        <div class="summary-row summary-row--total"><span>Tahmini Süre</span><strong id="summaryDuration" th:text="${summary.estimatedDuration}">96 saat</strong></div>
+                        <div class="production-summary-status">
+                            <span>Malzeme Uygunluğu</span>
+                            <strong>
+                                <span id="summaryMaterialAvailability" class="erp-badge"
+                                      th:classappend="${' erp-badge--' + summary.materialAvailabilityCssClass}"
+                                      th:text="${summary.materialAvailability}">Yeterli</span>
+                            </strong>
+                        </div>
+
+                        <div class="purchase-actions">
+                            <a th:href="@{/production/work-orders}" class="btn btn-light">Vazgeç</a>
+                            <button type="submit" class="btn btn-outline-primary" name="submitAction" value="DRAFT">Taslak Kaydet</button>
+                            <button type="submit" class="btn btn-primary" name="submitAction" value="PLANNED">İş Emrini Oluştur</button>
+                            <a id="sendToMrpAction" class="btn btn-outline-primary d-none"
+                               th:href="@{/planning/mrp(productCode=${workOrderRequest.productCode},quantity=${workOrderRequest.plannedQuantity})}">
+                                MRP'ye Gönder
+                            </a>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+<th:block layout:fragment="extra-scripts">
+    <script th:inline="javascript">
+        window.productionFormData = {
+            products: /*[[${products}]]*/ [],
+            productionLines: /*[[${productionLines}]]*/ [],
+            materialTemplates: /*[[${materialTemplates}]]*/ {}
+        };
+    </script>
+    <script th:src="@{/js/production.form.js}"></script>
+</th:block>
+
+</body>
+</html>

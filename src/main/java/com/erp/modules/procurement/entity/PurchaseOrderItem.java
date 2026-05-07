@@ -32,4 +32,15 @@ public class PurchaseOrderItem extends BaseEntity {
 
     @Column(nullable = false)
     private BigDecimal price;
+
+    @Column(name = "vat_rate", nullable = false)
+    private BigDecimal vatRate = BigDecimal.valueOf(20);
+
+    public BigDecimal getLineTotal() {
+        return price.multiply(BigDecimal.valueOf(quantity));
+    }
+
+    public BigDecimal getVatAmount() {
+        return getLineTotal().multiply(vatRate).divide(BigDecimal.valueOf(100));
+    }
 }
