@@ -24,7 +24,8 @@
             </a>
         </div>
 
-        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${successMessage != null and !#strings.isEmpty(successMessage)}"
+             class="alert alert-success" th:text="${successMessage}"></div>
 
         <section class="erp-panel">
             <div th:if="${#lists.isEmpty(suppliers)}" class="text-center py-5 text-muted">

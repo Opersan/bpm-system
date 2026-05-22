@@ -33,3 +33,7 @@ build/
 .vscode/
 
 .env
+
+# H2 file database (created automatically on first run via Flyway migrations)
+data/*
+!data/.gitkeep
