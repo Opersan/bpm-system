@@ -931,6 +931,24 @@ body.sidebar-toggled .content-wrapper {
     font-size: 1.22rem;
 }
 
+.summary-row--address {
+    margin-top: 0.35rem;
+    padding-top: 1rem;
+    border-top: 1px solid #edf0f5;
+    align-items: flex-start;
+}
+
+.summary-row--address strong {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #334155;
+    text-align: right;
+    max-width: 160px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.5;
+}
+
 .purchase-actions {
     display: grid;
     gap: 0.65rem;
@@ -1572,3 +1590,270 @@ body.sidebar-toggled .content-wrapper {
 .border-left-warning {
     border-left: .25rem solid #f6c23e!important;
 }
+
+/* ── Task Cards (Dashboard) ─────────────────────────────────── */
+.task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.task-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid #e2e7ef;
+    border-radius: 10px;
+    background: #fafbfc;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.task-card:hover {
+    border-color: #c5cee0;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.07);
+    background: #fff;
+}
+
+.task-card__status {
+    flex-shrink: 0;
+    min-width: 110px;
+}
+
+.task-card__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.task-card__title {
+    font-size: 0.95rem;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.task-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.task-card__action {
+    flex-shrink: 0;
+}
+
+/* ── Workflow Steps ──────────────────────────────────────────── */
+.workflow-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* ── ERP Page helpers ───────────────────────────────────────── */
+.erp-page {
+    padding: 1.5rem;
+}
+
+.erp-page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.erp-page-header h2 {
+    margin: 0 0 0.25rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.erp-page-header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.erp-breadcrumb {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-bottom: 0.35rem;
+}
+
+.erp-breadcrumb a {
+    color: #64748b;
+    text-decoration: none;
+}
+
+.erp-breadcrumb a:hover {
+    color: #3b82f6;
+}
+
+.erp-breadcrumb span:not(:last-child)::after,
+.erp-breadcrumb a:not(:last-child)::after {
+    content: '/';
+    margin-left: 0.4rem;
+    color: #cbd5e1;
+}
+
+.erp-panel {
+    border: 1px solid #e2e7ef;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    padding: 1.25rem;
+}
+
+.erp-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #edf0f5;
+}
+
+/* ── Workflow Steps (process.html) ──────────────────────────── */
+.workflow-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.workflow-steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    color: #94a3b8;
+    border-left: 2px solid #e2e8f0;
+    padding-left: 1.25rem;
+    margin-left: 0.5rem;
+    position: relative;
+}
+.workflow-steps li .fa-circle-check {
+    position: absolute;
+    left: -0.6rem;
+    top: 0.65rem;
+    background: white;
+}
+.workflow-steps li.done {
+    color: #1e7e34;
+    border-color: #28a745;
+}
+.workflow-steps li.active {
+    color: #333;
+    border-color: #0d6efd;
+    font-weight: 600;
+}
+.workflow-steps li:last-child {
+    border-left: none;
+}
+
+/* ── Purchase Request Stepper ───────────────────────────────── */
+.pr-stepper {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.pr-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.pr-step:not(.no-line)::before {
+    content: '';
+    position: absolute;
+    left: 1.1rem;
+    top: 2.2rem;
+    bottom: 0;
+    width: 2px;
+    background: #e2e8f0;
+}
+
+.pr-step.done::before  { background: #22c55e; }
+.pr-step.active::before { background: #3b82f6; }
+.pr-step.rejected::before { background: #ef4444; }
+
+.pr-step__icon {
+    flex-shrink: 0;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border: 2px solid #e2e8f0;
+    background: #f8fafc;
+    color: #94a3b8;
+    z-index: 1;
+    position: relative;
+}
+
+.pr-step.done .pr-step__icon {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: #fff;
+}
+
+.pr-step.active .pr-step__icon {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #fff;
+}
+
+.pr-step.rejected .pr-step__icon {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: #fff;
+}
+
+.pr-step__body {
+    flex: 1;
+    padding-top: 0.15rem;
+}
+
+.pr-step__title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #374151;
+}
+
+.pr-step.pending .pr-step__title { color: #94a3b8; }
+.pr-step.active .pr-step__title  { color: #1d4ed8; }
+.pr-step.done .pr-step__title    { color: #15803d; }
+.pr-step.rejected .pr-step__title { color: #dc2626; }
+
+.pr-step__detail {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    margin-top: 0.15rem;
+}
+
+.pr-step.done .pr-step__detail { color: #6b7280; }
+
+.pr-step__waiting {
+    color: #1d4ed8 !important;
+    font-weight: 600;
+}
+
+.pr-step__link {
+    font-size: 0.78rem;
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.pr-step__link:hover { text-decoration: underline; }

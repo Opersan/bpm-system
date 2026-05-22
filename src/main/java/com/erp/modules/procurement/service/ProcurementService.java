@@ -161,6 +161,24 @@ public class ProcurementService {
         return supplierRepository.findAll();
     }
 
+    public Supplier getSupplierById(Long id) {
+        return supplierRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Tedarikçi bulunamadı: " + id));
+    }
+
+    @Transactional
+    public Supplier updateSupplier(Long id, SupplierCreateRequest request) {
+        Supplier supplier = getSupplierById(id);
+        String newName = normalizeText(request.getName());
+        if (!supplier.getName().equalsIgnoreCase(newName) && supplierRepository.existsByNameIgnoreCase(newName)) {
+            throw new IllegalArgumentException("Bu isimde bir tedarikçi zaten kayıtlı.");
+        }
+        supplier.setName(newName);
+        supplier.setContactEmail(normalizeText(request.getContactEmail()));
+        supplier.setAddress(normalizeText(request.getAddress()));
+        return supplierRepository.save(supplier);
+    }
+
     public List<Item> getAllItems() {
         return itemRepository.findAll();
     }

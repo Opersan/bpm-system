@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title>Satın Alma Talebi</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+
+    <div class="erp-page">
+        <div class="erp-page-header">
+            <div>
+                <nav class="erp-breadcrumb" aria-label="breadcrumb">
+                    <a th:href="@{/dashboard}">Dashboard</a>
+                    <a th:href="@{/purchase-requests}">Satın Alma Talepleri</a>
+                    <span th:text="${pr.requestNumber}">Talep</span>
+                </nav>
+                <h2 th:text="${pr.requestNumber + ' — ' + pr.description}">Talep</h2>
+                <p>
+                    <span class="erp-badge"
+                          th:classappend="${' erp-badge--' + pr.status.cssClass}"
+                          th:text="${pr.status.label}">Durum</span>
+                    <span class="ms-2 text-muted small">
+                        Talep Eden: <strong th:text="${pr.requestedBy}">—</strong>
+                        <span th:if="${pr.department}"> | <span th:text="${pr.department}"></span></span>
+                        <span th:if="${pr.requiredBy}"> | Son tarih: <span th:text="${#temporals.format(pr.requiredBy, 'dd.MM.yyyy')}"></span></span>
+                    </span>
+                </p>
+            </div>
+            <a th:href="@{/purchase-requests}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Taleplere Dön
+            </a>
+        </div>
+
+        <!-- Flash messages -->
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+        <div class="row g-4">
+
+            <!-- Left: Request Details + Action Form -->
+            <div class="col-xl-8">
+
+                <!-- İhtiyaç Kalemleri -->
+                <section class="erp-panel mb-4">
+                    <div class="erp-panel-header mb-3">
+                        <h3 class="mb-0">İhtiyaç Kalemleri</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table erp-table no-datatable mb-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Malzeme</th>
+                                    <th>Kod</th>
+                                    <th class="text-end">Miktar</th>
+                                    <th>Birim</th>
+                                    <th>Not</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="item, stat : ${pr.items}">
+                                    <td class="text-muted" th:text="${stat.index + 1}">1</td>
+                                    <td class="fw-semibold" th:text="${item.itemName}">—</td>
+                                    <td class="text-muted" th:text="${item.itemCode}">—</td>
+                                    <td class="text-end" th:text="${#numbers.formatDecimal(item.quantity, 1, 0)}">0</td>
+                                    <td th:text="${item.uom}">EA</td>
+                                    <td class="text-muted small" th:text="${item.notes}">—</td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(pr.items)}">
+                                    <td colspan="6" class="text-center text-muted py-3">Kalem bilgisi yok.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Teklifler (visible when quotes exist) -->
+                <section class="erp-panel mb-4" th:if="${!#lists.isEmpty(pr.quotes)}">
+                    <div class="erp-panel-header mb-3">
+                        <h3 class="mb-0">Tedarikçi Teklifleri</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table erp-table no-datatable mb-0">
+                            <thead>
+                                <tr>
+                                    <th th:if="${canApprove}">Seç</th>
+                                    <th>Tedarikçi</th>
+                                    <th class="text-end">Toplam Tutar</th>
+                                    <th>Para Birimi</th>
+                                    <th>Tahmini Teslim</th>
+                                    <th>Not</th>
+                                    <th th:if="${pr.status.name() == 'APPROVED'}">Durum</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="quote : ${pr.quotes}"
+                                    th:classappend="${quote.selected} ? ' table-success'">
+                                    <td th:if="${canApprove}">
+                                        <input type="radio" name="selectedQuoteId" class="form-check-input"
+                                               th:value="${quote.id}" th:id="${'q' + quote.id}">
+                                    </td>
+                                    <td class="fw-semibold" th:text="${quote.supplierName}">—</td>
+                                    <td class="text-end fw-semibold"
+                                        th:text="${#numbers.formatDecimal(quote.totalAmount, 1, 2)}">0,00</td>
+                                    <td th:text="${quote.currency}">TRY</td>
+                                    <td th:text="${quote.estimatedDeliveryDate != null ? #temporals.format(quote.estimatedDeliveryDate, 'dd.MM.yyyy') : '—'}">—</td>
+                                    <td class="text-muted small" th:text="${quote.notes}">—</td>
+                                    <td th:if="${pr.status.name() == 'APPROVED'}">
+                                        <span th:if="${quote.selected}" class="erp-badge erp-badge--success">Seçildi</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- ==== STEP 2: Quote Entry Form (Purchasing User) ==== -->
+                <section class="erp-panel form-section" th:if="${canEnterQuotes}">
+                    <div class="form-section__header">
+                        <div>
+                            <h3>Tedarikçi Tekliflerini Gir</h3>
+                            <p>En az bir tedarikçi teklifi girin. Birden fazla tedarikçi ekleyebilirsiniz.</p>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="addQuoteBtn">
+                            <i class="fas fa-plus me-1"></i>Tedarikçi Ekle
+                        </button>
+                    </div>
+
+                    <form th:action="@{'/purchase-requests/' + ${pr.id} + '/quotes'}" method="post">
+                        <!-- Hidden supplier data for JS -->
+                        <select id="supplierDataSource" style="display:none" aria-hidden="true">
+                            <option th:each="s : ${suppliers}" th:value="${s.id}" th:text="${s.name}"></option>
+                        </select>
+
+                        <div id="quotesContainer"></div>
+                        <div id="noQuoteMsg" class="text-center text-muted py-2">
+                            Tedarikçi eklemek için yukarıdaki butona tıklayın.
+                        </div>
+
+                        <div class="mt-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="submitQuotesBtn">
+                                <i class="fas fa-paper-plane me-2"></i>Teklifleri Gönder (Yönetici Onayına)
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- ==== STEP 3: Approval Form (Manager) ==== -->
+                <section class="erp-panel form-section" th:if="${canApprove}">
+                    <div class="form-section__header">
+                        <div>
+                            <h3>Teklif Seç ve Onayla</h3>
+                            <p>Yukarıdaki tabloda bir teklif seçin, ardından onaylamak için aşağıdaki formu gönderin.</p>
+                        </div>
+                    </div>
+
+                    <form th:action="@{'/purchase-requests/' + ${pr.id} + '/approve'}" method="post" id="approveForm">
+                        <input type="hidden" name="selectedQuoteId" id="hiddenSelectedQuoteId">
+                        <div class="mb-3">
+                            <label for="approvalNotes" class="form-label">Notlar (opsiyonel)</label>
+                            <textarea id="approvalNotes" name="notes" class="form-control" rows="2"
+                                      placeholder="Onay gerekçesi veya ek bilgi"></textarea>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success" id="approveBtn" disabled>
+                                <i class="fas fa-check me-2"></i>Onayla ve Sipariş Oluştur
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr>
+
+                    <form th:action="@{'/purchase-requests/' + ${pr.id} + '/reject'}" method="post"
+                          onsubmit="return confirm('Bu talebi reddetmek istediğinize emin misiniz?')">
+                        <div class="mb-3">
+                            <label for="rejectionReason" class="form-label">Red Gerekçesi <span class="text-danger">*</span></label>
+                            <input id="rejectionReason" name="rejectionReason" type="text" class="form-control"
+                                   placeholder="Neden reddediliyor?" required>
+                        </div>
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="fas fa-times me-2"></i>Reddet
+                        </button>
+                    </form>
+                </section>
+
+            </div>
+
+            <!-- Right: Workflow Status -->
+            <div class="col-xl-4">
+                <section class="erp-panel">
+                    <h4 class="mb-4" style="font-size:1rem;font-weight:700;color:#1e293b;">
+                        <i class="fas fa-route me-2 text-primary"></i>Süreç Durumu
+                    </h4>
+
+                    <div class="pr-stepper">
+
+                        <!-- Step 1: Talep Oluşturuldu -->
+                        <div class="pr-step done">
+                            <div class="pr-step__icon"><i class="fas fa-check"></i></div>
+                            <div class="pr-step__body">
+                                <div class="pr-step__title">Talep Oluşturuldu</div>
+                                <div class="pr-step__detail"
+                                     th:text="${pr.requestedBy + ' tarafından oluşturuldu'}">—</div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Teklif Girişi -->
+                        <div class="pr-step"
+                             th:classappend="${pr.status.name() == 'SUBMITTED'} ? ' active' :
+                                             (${pr.status.name() == 'QUOTES_ENTERED' or pr.status.name() == 'APPROVED'} ? ' done' : ' pending')">
+                            <div class="pr-step__icon">
+                                <i th:if="${pr.status.name() == 'QUOTES_ENTERED' or pr.status.name() == 'APPROVED'}"
+                                   class="fas fa-check"></i>
+                                <i th:if="${pr.status.name() == 'SUBMITTED'}" class="fas fa-spinner fa-spin"></i>
+                                <span th:if="${pr.status.name() != 'SUBMITTED' and pr.status.name() != 'QUOTES_ENTERED' and pr.status.name() != 'APPROVED'}">2</span>
+                            </div>
+                            <div class="pr-step__body">
+                                <div class="pr-step__title">Teklif Girişi</div>
+                                <div class="pr-step__detail" th:if="${pr.handledBy != null}"
+                                     th:text="${pr.handledBy + ' teklif girdi'}">—</div>
+                                <div class="pr-step__detail pr-step__waiting"
+                                     th:if="${pr.handledBy == null and pr.status.name() == 'SUBMITTED'}">
+                                    <i class="fas fa-clock me-1"></i>Satın almacı teklif girecek
+                                </div>
+                                <div class="pr-step__detail" th:if="${pr.handledBy == null and pr.status.name() != 'SUBMITTED'}">—</div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Yönetici Onayı -->
+                        <div class="pr-step"
+                             th:classappend="${pr.status.name() == 'QUOTES_ENTERED'} ? ' active' :
+                                             (${pr.status.name() == 'APPROVED'} ? ' done' :
+                                             (${pr.status.name() == 'REJECTED'} ? ' rejected' : ' pending'))">
+                            <div class="pr-step__icon">
+                                <i th:if="${pr.status.name() == 'APPROVED'}" class="fas fa-check"></i>
+                                <i th:if="${pr.status.name() == 'REJECTED'}" class="fas fa-times"></i>
+                                <i th:if="${pr.status.name() == 'QUOTES_ENTERED'}" class="fas fa-spinner fa-spin"></i>
+                                <span th:if="${pr.status.name() == 'SUBMITTED'}">3</span>
+                            </div>
+                            <div class="pr-step__body">
+                                <div class="pr-step__title">Yönetici Onayı</div>
+                                <div class="pr-step__detail" th:if="${pr.approvedBy != null and pr.status.name() == 'APPROVED'}"
+                                     th:text="${pr.approvedBy + ' onayladı'}">—</div>
+                                <div class="pr-step__detail" th:if="${pr.approvedBy != null and pr.status.name() == 'REJECTED'}"
+                                     th:text="${pr.approvedBy + ' reddetti'}">—</div>
+                                <div class="pr-step__detail pr-step__waiting"
+                                     th:if="${pr.status.name() == 'QUOTES_ENTERED'}">
+                                    <i class="fas fa-clock me-1"></i>Yönetici teklif seçecek
+                                </div>
+                                <div class="pr-step__detail" th:if="${pr.status.name() == 'SUBMITTED'}">
+                                    Teklifler bekleniyor
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Satın Alma Siparişi -->
+                        <div class="pr-step no-line"
+                             th:classappend="${pr.status.name() == 'APPROVED'} ? ' done' : ' pending'">
+                            <div class="pr-step__icon">
+                                <i th:if="${pr.status.name() == 'APPROVED'}" class="fas fa-check"></i>
+                                <span th:unless="${pr.status.name() == 'APPROVED'}">4</span>
+                            </div>
+                            <div class="pr-step__body">
+                                <div class="pr-step__title">Satın Alma Siparişi</div>
+                                <div th:if="${pr.purchaseOrderId != null}">
+                                    <a th:href="@{/purchasing/orders}" class="pr-step__link">
+                                        <i class="fas fa-external-link-alt me-1"></i>
+                                        PO #<span th:text="${pr.purchaseOrderId}"></span> oluşturuldu
+                                    </a>
+                                </div>
+                                <div class="pr-step__detail"
+                                     th:if="${pr.purchaseOrderId == null and pr.status.name() != 'REJECTED'}">
+                                    Onay sonrası otomatik oluşur
+                                </div>
+                                <div class="pr-step__detail" th:if="${pr.status.name() == 'REJECTED'}">
+                                    Talep reddedildi
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Rejection reason -->
+                    <div class="alert alert-danger mt-3 mb-0 small"
+                         th:if="${pr.status.name() == 'REJECTED' and pr.rejectionReason != null}">
+                        <strong>Red Gerekçesi:</strong>
+                        <span th:text="${pr.rejectionReason}"></span>
+                    </div>
+                </section>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="extra-scripts">
+<script th:inline="none">
+/*<![CDATA[*/
+    let quoteIndex = 0;
+
+    const suppliers = Array.from(
+        document.querySelectorAll('#supplierDataSource option')
+    ).map(o => ({ id: o.value, name: o.text }));
+
+    function updateNoQuoteMsg() {
+        const container = document.getElementById('quotesContainer');
+        const msg = document.getElementById('noQuoteMsg');
+        if (msg) msg.style.display = (container && container.children.length === 0) ? 'block' : 'none';
+    }
+
+    function addQuoteRow() {
+        const container = document.getElementById('quotesContainer');
+        if (!container) return;
+
+        const idx = quoteIndex++;
+        const supplierOptions = suppliers.map(s =>
+            `<option value="${s.id}">${s.name}</option>`
+        ).join('');
+
+        const row = document.createElement('div');
+        row.className = 'border rounded p-3 mb-3 position-relative';
+        row.innerHTML = `
+            <button type="button" class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2"
+                    onclick="this.closest('.border').remove(); updateNoQuoteMsg();">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm">Tedarikçi <span class="text-danger">*</span></label>
+                    <select name="quotes[${idx}].supplierId" class="form-select form-select-sm" required>
+                        <option value="">Seçiniz</option>
+                        ${supplierOptions}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm">Toplam Tutar <span class="text-danger">*</span></label>
+                    <input type="number" name="quotes[${idx}].totalAmount" class="form-control form-control-sm"
+                           min="0" step="0.01" placeholder="0,00" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label form-label-sm">Para Birimi</label>
+                    <select name="quotes[${idx}].currency" class="form-select form-select-sm">
+                        <option value="TRY">TRY</option>
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm">Tahmini Teslim</label>
+                    <input type="date" name="quotes[${idx}].estimatedDeliveryDate" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label form-label-sm">Not</label>
+                    <input type="text" name="quotes[${idx}].notes" class="form-control form-control-sm"
+                           placeholder="Ek bilgi (opsiyonel)">
+                </div>
+            </div>`;
+
+        container.appendChild(row);
+        updateNoQuoteMsg();
+    }
+
+    const addQuoteBtn = document.getElementById('addQuoteBtn');
+    if (addQuoteBtn) {
+        addQuoteBtn.addEventListener('click', addQuoteRow);
+        addQuoteRow(); // auto-add one row
+    }
+
+    // Sync selected quote radio to hidden approval input
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.name === 'selectedQuoteId') {
+            const hidden = document.getElementById('hiddenSelectedQuoteId');
+            const approveBtn = document.getElementById('approveBtn');
+            if (hidden) hidden.value = e.target.value;
+            if (approveBtn) approveBtn.disabled = !e.target.value;
+        }
+    });
+
+    const approveForm = document.getElementById('approveForm');
+    if (approveForm) {
+        approveForm.addEventListener('submit', function(e) {
+            const selectedQuoteId = document.getElementById('hiddenSelectedQuoteId')?.value;
+            if (!selectedQuoteId) {
+                e.preventDefault();
+                alert('Lütfen onaylamak istediğiniz teklifi seçin.');
+            }
+        });
+    }
+/*]]>*/
+</script>
+</th:block>
+
+</body>
+</html>

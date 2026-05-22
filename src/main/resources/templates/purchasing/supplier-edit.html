@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}">
 <head>
-    <title th:text="${pageTitle}">Yeni Tedarikçi</title>
+    <title>Tedarikçi Düzenle</title>
 </head>
 <body>
 
@@ -10,26 +10,23 @@
     <div class="erp-page">
         <div class="erp-page-header">
             <div>
-                <nav class="erp-breadcrumb" aria-label="breadcrumb">
-                    <a th:href="@{/dashboard}" th:text="${breadcrumbs[0]}">Dashboard</a>
-                    <span th:text="${breadcrumbs[1]}">Satın Alma</span>
-                    <span th:text="${breadcrumbs[2]}">Yeni Tedarikçi</span>
+                <nav class="erp-breadcrumb">
+                    <a th:href="@{/dashboard}">Dashboard</a>
+                    <a th:href="@{/purchasing/suppliers}">Tedarikçiler</a>
+                    <span th:text="${supplierCreateRequest.name}">Düzenle</span>
                 </nav>
-                <h2 th:text="${pageTitle}">Yeni Tedarikçi</h2>
-                <p>Tedarikçi ana verisini ekleyin.</p>
+                <h2>Tedarikçi Düzenle</h2>
+                <p>Tedarikçi bilgilerini güncelleyin.</p>
             </div>
-            <a th:href="@{/purchasing/orders}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Siparişlere Dön
+            <a th:href="@{/purchasing/suppliers}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Tedarikçilere Dön
             </a>
         </div>
 
-        <form th:action="@{/purchasing/suppliers}" th:object="${supplierCreateRequest}" method="post" novalidate id="supplierForm">
-            <div th:if="${errorMessage}" class="alert alert-danger purchasing-notice">
-                <strong th:text="${errorMessage}">Form hatası</strong>
-                <ul th:if="${#fields.hasAnyErrors()}" class="form-error-list mb-0">
-                    <li th:each="error : ${#fields.errors('*')}" th:text="${error}">Hata</li>
-                </ul>
-            </div>
+        <form th:action="@{'/purchasing/suppliers/' + ${supplierId}}" th:object="${supplierCreateRequest}"
+              method="post" novalidate id="supplierForm">
+
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
             <div class="row g-4 align-items-start">
                 <div class="col-xl-8">
@@ -37,10 +34,9 @@
                         <div class="form-section__header">
                             <div>
                                 <h3>Tedarikçi Bilgileri</h3>
-                                <p>Satın alma süreçlerinde kullanılacak temel tedarikçi bilgisini girin.</p>
+                                <p>Satın alma süreçlerinde kullanılacak temel tedarikçi bilgisini düzenleyin.</p>
                             </div>
                         </div>
-
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="name" class="form-label">Tedarikçi Adı <span class="text-danger">*</span></label>
@@ -83,16 +79,15 @@
                         </div>
                         <div class="summary-row">
                             <span>Kullanım</span>
-                            <strong>Yeni satın alma siparişlerinde seçilebilir</strong>
+                            <strong>Satın alma siparişlerinde seçilebilir</strong>
                         </div>
                         <div class="summary-row summary-row--address">
                             <span>Adres</span>
                             <strong id="summaryAddress">-</strong>
                         </div>
-
                         <div class="purchase-actions">
                             <a th:href="@{/purchasing/suppliers}" class="btn btn-light">Vazgeç</a>
-                            <button type="submit" class="btn btn-primary">Tedarikçi Oluştur</button>
+                            <button type="submit" class="btn btn-primary">Kaydet</button>
                         </div>
                     </aside>
                 </div>
@@ -111,7 +106,6 @@
         document.getElementById('summaryEmail').textContent   = email   || '-';
         document.getElementById('summaryAddress').textContent = address || '-';
     }
-    // init on load in case of validation redirect
     updateSummary();
 </script>
 </th:block>

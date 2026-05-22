@@ -18,6 +18,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -103,7 +104,7 @@ public class PurchasingController {
         }
 
         redirectAttributes.addFlashAttribute("successMessage", "Yeni tedarikçi oluşturuldu.");
-        return "redirect:/purchasing/new?supplierId=" + supplier.getId();
+        return "redirect:/purchasing/suppliers";
     }
 
     @PostMapping("/orders")
@@ -234,5 +235,51 @@ public class PurchasingController {
         model.addAttribute("activePage", "procurement");
         model.addAttribute("breadcrumbs", List.of("Dashboard", "Satın Alma", "Yeni Tedarikçi"));
         model.addAttribute("supplierCreateRequest", request);
+    }
+
+    @GetMapping("/suppliers")
+    public String supplierList(Model model,
+                               @ModelAttribute("successMessage") String successMessage) {
+        model.addAttribute("suppliers", procurementService.getAllSuppliers());
+        model.addAttribute("pageTitle", "Tedarikçiler");
+        model.addAttribute("activePage", "procurement");
+        return "purchasing/suppliers";
+    }
+
+    @GetMapping("/suppliers/{id}/edit")
+    public String supplierEditForm(@PathVariable Long id, Model model) {
+        var supplier = procurementService.getSupplierById(id);
+        var request = new SupplierCreateRequest();
+        request.setName(supplier.getName());
+        request.setContactEmail(supplier.getContactEmail());
+        request.setAddress(supplier.getAddress());
+        model.addAttribute("supplierId", id);
+        model.addAttribute("supplierCreateRequest", request);
+        model.addAttribute("pageTitle", "Tedarikçi Düzenle");
+        model.addAttribute("activePage", "procurement");
+        return "purchasing/supplier-edit";
+    }
+
+    @PostMapping("/suppliers/{id}")
+    public String supplierUpdate(@PathVariable Long id,
+                                 @Valid @ModelAttribute SupplierCreateRequest supplierCreateRequest,
+                                 BindingResult bindingResult,
+                                 Model model,
+                                 RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("supplierId", id);
+            model.addAttribute("errorMessage", "Lütfen formdaki hataları düzeltin.");
+            return "purchasing/supplier-edit";
+        }
+        try {
+            procurementService.updateSupplier(id, supplierCreateRequest);
+        } catch (IllegalArgumentException ex) {
+            bindingResult.rejectValue("name", "duplicate", ex.getMessage());
+            model.addAttribute("supplierId", id);
+            model.addAttribute("errorMessage", ex.getMessage());
+            return "purchasing/supplier-edit";
+        }
+        redirectAttributes.addFlashAttribute("successMessage", "Tedarikçi güncellendi.");
+        return "redirect:/purchasing/suppliers";
     }
 }

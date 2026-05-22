@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title>Satın Alma Talepleri</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+
+    <div class="erp-page">
+        <div class="erp-page-header">
+            <div>
+                <nav class="erp-breadcrumb" aria-label="breadcrumb">
+                    <a th:href="@{/dashboard}">Dashboard</a>
+                    <span>Satın Alma Talepleri</span>
+                </nav>
+                <h2>Satın Alma Talepleri</h2>
+                <p>Tüm satın alma taleplerini takip edin.</p>
+            </div>
+            <a th:if="${@authorizationService.canCreatePurchaseRequest()}"
+               th:href="@{/purchase-requests/new}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Yeni Talep
+            </a>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+        <section class="erp-panel">
+            <div class="table-responsive">
+                <table class="table erp-table" id="prTable">
+                    <thead>
+                        <tr>
+                            <th>Talep No</th>
+                            <th>Açıklama</th>
+                            <th>Birim</th>
+                            <th>Talep Eden</th>
+                            <th>Son Tarih</th>
+                            <th>Durum</th>
+                            <th>Kalem</th>
+                            <th>Teklif</th>
+                            <th class="text-end">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="req : ${requests}">
+                            <td class="fw-semibold" th:text="${req.requestNumber}">PT-001</td>
+                            <td th:text="${req.description}">—</td>
+                            <td class="text-muted" th:text="${req.department}">—</td>
+                            <td th:text="${req.requestedBy}">—</td>
+                            <td th:text="${req.requiredBy != null ? #temporals.format(req.requiredBy, 'dd.MM.yyyy') : '—'}">—</td>
+                            <td>
+                                <span class="erp-badge"
+                                      th:classappend="${' erp-badge--' + req.status.cssClass}"
+                                      th:text="${req.status.label}">Durum</span>
+                            </td>
+                            <td class="text-muted">
+                                <span th:text="${#lists.size(req.items)}">0</span> kalem
+                            </td>
+                            <td class="text-muted">
+                                <span th:text="${#lists.size(req.quotes)}">0</span> teklif
+                            </td>
+                            <td class="text-end">
+                                <a th:href="@{'/purchase-requests/' + ${req.id}}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>İncele
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(requests)}">
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox me-2"></i>Henüz satın alma talebi bulunmuyor.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </div>
+
+</div>
+
+</body>
+</html>

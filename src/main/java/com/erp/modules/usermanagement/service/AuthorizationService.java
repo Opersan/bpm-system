@@ -83,18 +83,31 @@ public class AuthorizationService {
         return hasAnyRole(UserRole.ADMIN, UserRole.PRODUCTION_USER);
     }
 
+    public boolean canCreatePurchaseRequest() {
+        return hasAnyRole(UserRole.ADMIN, UserRole.PRODUCTION_USER);
+    }
+
+    public boolean canProcessPurchaseRequest() {
+        return hasAnyRole(UserRole.ADMIN, UserRole.PURCHASING_USER, UserRole.MANAGER);
+    }
+
     public List<NavigationItemDto> getVisibleNavigationItems(String currentPath) {
         List<NavigationItemDto> items = List.of(
             directItem("dashboard", "Dashboard", "dashboard", "/dashboard", currentPath, List.of("/", "/dashboard")),
             groupedItem("procurement", "Satın Alma", "procurement", currentPath, List.of(
+                link("Satın Alma Siparişleri", "/purchasing/orders", currentPath, List.of("/purchasing/orders", "/procurement")),
                 link("Yeni Satın Alma Siparişi", "/purchasing/new", currentPath, List.of("/purchasing/new", "/procurement/new")),
-                link("Yeni Tedarikçi", "/purchasing/suppliers/new", currentPath, List.of("/purchasing/suppliers/new")),
-                link("Satın Alma Siparişleri", "/purchasing/orders", currentPath, List.of("/purchasing/orders", "/procurement"))
+                link("Tedarikçiler", "/purchasing/suppliers", currentPath, List.of("/purchasing/suppliers")),
+                link("Yeni Tedarikçi", "/purchasing/suppliers/new", currentPath, List.of("/purchasing/suppliers/new"))
             )),
             groupedItem("planning", "Planlama", "planning", currentPath, List.of(
                 link("Envanter", "/planning/inventory", currentPath, List.of("/planning/inventory", "/inventory")),
                 link("Yeni Kalem Oluştur", "/planning/items/new", currentPath, List.of("/planning/items/new")),
                 link("MRP", "/planning/mrp", currentPath, List.of("/planning/mrp", "/mrp"))
+            )),
+            groupedItem("purchase-requests", "Satın Alma Talepleri", "procurement", currentPath, List.of(
+                link("Yeni Talep Oluştur", "/purchase-requests/new", currentPath, List.of("/purchase-requests/new")),
+                link("Talepler", "/purchase-requests", currentPath, List.of("/purchase-requests"))
             )),
             groupedItem("production", "Üretim", "production", currentPath, List.of(
                 link("İş Emri Oluştur", "/production/work-orders/new", currentPath, List.of("/production/work-orders/new", "/manufacturing/new")),
@@ -192,7 +205,10 @@ public class AuthorizationService {
             new RouteRule("/admin/**", null, Set.of(UserRole.ADMIN)),
             new RouteRule("/purchasing/new", Set.of("GET"), Set.of(UserRole.ADMIN, UserRole.PURCHASING_USER)),
             new RouteRule("/purchasing/suppliers/new", Set.of("GET"), Set.of(UserRole.ADMIN, UserRole.PURCHASING_USER)),
+            new RouteRule("/purchasing/suppliers", Set.of("GET"), Set.of(UserRole.ADMIN, UserRole.MANAGER, UserRole.PURCHASING_USER)),
             new RouteRule("/purchasing/suppliers", Set.of("POST"), Set.of(UserRole.ADMIN, UserRole.PURCHASING_USER)),
+            new RouteRule("/purchasing/suppliers/*/edit", Set.of("GET"), Set.of(UserRole.ADMIN, UserRole.PURCHASING_USER)),
+            new RouteRule("/purchasing/suppliers/*", Set.of("POST"), Set.of(UserRole.ADMIN, UserRole.PURCHASING_USER)),
             new RouteRule("/purchasing/orders", Set.of("GET"), Set.of(UserRole.ADMIN, UserRole.MANAGER, UserRole.PURCHASING_USER)),
             new RouteRule("/purchasing/orders", Set.of("POST"), Set.of(UserRole.ADMIN, UserRole.PURCHASING_USER)),
             new RouteRule("/purchasing/orders/**", Set.of("POST"), Set.of(UserRole.ADMIN, UserRole.PURCHASING_USER)),
@@ -211,7 +227,12 @@ public class AuthorizationService {
             new RouteRule("/production/work-orders/*/complete", Set.of("POST"), Set.of(UserRole.ADMIN, UserRole.PRODUCTION_USER)),
             new RouteRule("/production/work-orders/*/cancel", Set.of("POST"), Set.of(UserRole.ADMIN, UserRole.PRODUCTION_USER)),
             new RouteRule("/manufacturing/new", Set.of("GET"), Set.of(UserRole.ADMIN, UserRole.PRODUCTION_USER)),
-            new RouteRule("/manufacturing", Set.of("GET"), Set.of(UserRole.ADMIN, UserRole.MANAGER, UserRole.PRODUCTION_USER, UserRole.OPERATOR))
+            new RouteRule("/manufacturing", Set.of("GET"), Set.of(UserRole.ADMIN, UserRole.MANAGER, UserRole.PRODUCTION_USER, UserRole.OPERATOR)),
+            new RouteRule("/purchase-requests/new", Set.of("GET"), Set.of(UserRole.ADMIN, UserRole.PRODUCTION_USER)),
+            new RouteRule("/purchase-requests", Set.of("GET"), ALL_ROLES),
+            new RouteRule("/purchase-requests", Set.of("POST"), Set.of(UserRole.ADMIN, UserRole.PRODUCTION_USER)),
+            new RouteRule("/purchase-requests/**", Set.of("GET"), ALL_ROLES),
+            new RouteRule("/purchase-requests/**", Set.of("POST"), Set.of(UserRole.ADMIN, UserRole.PURCHASING_USER, UserRole.MANAGER))
         );
     }
 

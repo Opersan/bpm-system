@@ -145,7 +145,7 @@ public class ProductionService {
             .priority(WorkOrderPriority.NORMAL)
             .plannedStartDate(LocalDate.now().plusDays(1))
             .plannedEndDate(LocalDate.now().plusDays(5))
-            .shift(shifts.getFirst())
+            .shift(defaultShift())
             .build();
     }
 
@@ -164,7 +164,7 @@ public class ProductionService {
             prepared.setPlannedEndDate(prepared.getPlannedStartDate().plusDays(4));
         }
         if (trimToNull(prepared.getShift()) == null) {
-            prepared.setShift(shifts.getFirst());
+            prepared.setShift(defaultShift());
         }
         ProductDto product = getSelectedProduct(prepared.getProductCode());
         if (product != null) {
@@ -423,6 +423,10 @@ public class ProductionService {
             .thenComparing(Comparator.comparingInt((WorkOrderDto order) -> order.getPriority() != null ? order.getPriority().getSortOrder() : 0).reversed())
             .thenComparing(WorkOrderDto::getPlannedStartDate, Comparator.nullsLast(Comparator.naturalOrder()))
             .thenComparing(WorkOrderDto::getWorkOrderNo, Comparator.nullsLast(Comparator.naturalOrder()));
+    }
+
+    private String defaultShift() {
+        return shifts.isEmpty() ? null : shifts.get(0);
     }
 
     private boolean matchesSearch(WorkOrderDto order, String search) {

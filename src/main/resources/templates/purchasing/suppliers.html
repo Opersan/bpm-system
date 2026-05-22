@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title>Tedarikçiler</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+    <div class="erp-page">
+        <div class="erp-page-header">
+            <div>
+                <nav class="erp-breadcrumb">
+                    <a th:href="@{/dashboard}">Dashboard</a>
+                    <span>Satın Alma</span>
+                    <span>Tedarikçiler</span>
+                </nav>
+                <h2>Tedarikçiler</h2>
+                <p>Satın alma süreçlerinde kullanılan tedarikçi ana verisi.</p>
+            </div>
+            <a th:if="${@authorizationService.canCreateSupplier()}"
+               th:href="@{/purchasing/suppliers/new}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Yeni Tedarikçi
+            </a>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+
+        <section class="erp-panel">
+            <div th:if="${#lists.isEmpty(suppliers)}" class="text-center py-5 text-muted">
+                <i class="fas fa-truck fa-3x mb-3 opacity-25"></i>
+                <p class="fw-semibold">Henüz tedarikçi eklenmemiş.</p>
+                <a th:href="@{/purchasing/suppliers/new}" class="btn btn-primary btn-sm mt-1">
+                    <i class="fas fa-plus me-1"></i>İlk Tedarikçiyi Ekle
+                </a>
+            </div>
+
+            <div th:unless="${#lists.isEmpty(suppliers)}" class="table-responsive">
+                <table class="table erp-table no-datatable align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Tedarikçi Adı</th>
+                            <th>İletişim E-postası</th>
+                            <th>Adres</th>
+                            <th class="text-end">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="s, stat : ${suppliers}">
+                            <td class="text-muted" th:text="${stat.index + 1}">1</td>
+                            <td class="fw-semibold" th:text="${s.name}">—</td>
+                            <td>
+                                <a th:href="${'mailto:' + s.contactEmail}" th:text="${s.contactEmail}">—</a>
+                            </td>
+                            <td class="text-muted small" style="max-width:280px;white-space:pre-wrap"
+                                th:text="${s.address}">—</td>
+                            <td class="text-end">
+                                <a th:if="${@authorizationService.canCreateSupplier()}"
+                                   th:href="@{'/purchasing/suppliers/' + ${s.id} + '/edit'}"
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-pen me-1"></i>Düzenle
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+</body>
+</html>

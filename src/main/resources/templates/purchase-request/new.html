@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title>Yeni Satın Alma Talebi</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+
+    <div class="erp-page">
+        <div class="erp-page-header">
+            <div>
+                <nav class="erp-breadcrumb" aria-label="breadcrumb">
+                    <a th:href="@{/dashboard}">Dashboard</a>
+                    <span>Satın Alma Talepleri</span>
+                    <span>Yeni Talep</span>
+                </nav>
+                <h2>Yeni Satın Alma Talebi</h2>
+                <p>İhtiyaç duyulan malzemeleri katalogdan seçerek satın alma süreci başlatın.</p>
+            </div>
+            <a th:href="@{/purchase-requests}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Taleplere Dön
+            </a>
+        </div>
+
+        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+        <form id="prForm" th:action="@{/purchase-requests}" method="post">
+
+            <div class="row g-4 align-items-start">
+                <div class="col-xl-8">
+
+                    <!-- Talep Bilgileri -->
+                    <section class="erp-panel form-section mb-4">
+                        <div class="form-section__header">
+                            <div>
+                                <h3>Talep Bilgileri</h3>
+                                <p>Talep açıklaması ve gereksinim detaylarını girin.</p>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label for="description" class="form-label">Talep Açıklaması <span class="text-danger">*</span></label>
+                                <input id="description" name="description" type="text" class="form-control"
+                                       placeholder="Neye ihtiyaç duyulduğunu kısaca açıklayın" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="department" class="form-label">Birim / Departman</label>
+                                <input id="department" name="department" type="text" class="form-control"
+                                       placeholder="ör. Üretim, Bakım">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="requiredBy" class="form-label">Son Teslim Tarihi</label>
+                                <input id="requiredBy" name="requiredBy" type="date" class="form-control">
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Kalemler -->
+                    <section class="erp-panel form-section">
+                        <div class="form-section__header d-flex justify-content-between align-items-start">
+                            <div>
+                                <h3>İhtiyaç Kalemleri</h3>
+                                <p>Katalogdan malzeme seçin ve miktarını girin.</p>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="addItemBtn">
+                                <i class="fas fa-plus me-1"></i>Kalem Ekle
+                            </button>
+                        </div>
+
+                        <div id="itemsContainer"></div>
+
+                        <div id="noItemsMsg" class="text-center text-muted py-4">
+                            <i class="fas fa-box-open fa-2x mb-2 d-block opacity-50"></i>
+                            Henüz kalem eklenmedi. <strong>"Kalem Ekle"</strong> butonuna tıklayın.
+                        </div>
+                    </section>
+
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-xl-4">
+                    <section class="erp-panel form-section">
+                        <div class="form-section__header">
+                            <div>
+                                <h3>Gönder</h3>
+                                <p>Bilgileri kontrol ettikten sonra talebi satın alma birimine gönderin.</p>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-2"></i>Talebi Gönder
+                            </button>
+                            <a th:href="@{/purchase-requests}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>İptal
+                            </a>
+                        </div>
+                        <hr>
+                        <div class="small text-muted mt-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Talep satın alma birimine iletildikten sonra durumunu
+                            <a th:href="@{/purchase-requests}">Talepler</a> ekranından takip edebilirsiniz.
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+</div>
+
+<th:block layout:fragment="extra-scripts">
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const CATALOG_ITEMS = /*[[${catalogItems}]]*/ [];
+    /*]]>*/
+
+    let itemIndex = 0;
+
+    function updateNoItemsMsg() {
+        const container = document.getElementById('itemsContainer');
+        document.getElementById('noItemsMsg').style.display =
+            container.children.length === 0 ? 'block' : 'none';
+    }
+
+    function buildSelectOptions() {
+        if (!CATALOG_ITEMS || CATALOG_ITEMS.length === 0) {
+            return '<option value="">— Katalogda ürün yok —</option>';
+        }
+        let opts = '<option value="">Malzeme seçin...</option>';
+        CATALOG_ITEMS.forEach(item => {
+            opts += `<option value="${item.id}"
+                             data-code="${item.code || ''}"
+                             data-name="${item.name}"
+                             data-uom="${item.uom || 'EA'}">
+                         ${item.code ? item.code + ' — ' : ''}${item.name}
+                     </option>`;
+        });
+        return opts;
+    }
+
+    function addItemRow() {
+        const idx = itemIndex++;
+        const container = document.getElementById('itemsContainer');
+
+        const row = document.createElement('div');
+        row.className = 'item-row border rounded p-3 mb-3 position-relative bg-white';
+        row.innerHTML = `
+            <button type="button" class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 remove-item-btn"
+                    title="Kalemi Kaldır"><i class="fas fa-times"></i></button>
+            <div class="row g-2 align-items-end">
+                <div class="col-md-6">
+                    <label class="form-label form-label-sm fw-semibold">
+                        Malzeme <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select form-select-sm item-catalog-select" required>
+                        ${buildSelectOptions()}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label form-label-sm fw-semibold">
+                        Miktar <span class="text-danger">*</span>
+                    </label>
+                    <input type="number" class="form-control form-control-sm item-qty-input"
+                           min="0.01" step="0.01" placeholder="0" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label form-label-sm fw-semibold">Birim</label>
+                    <input type="text" class="form-control form-control-sm item-uom-display"
+                           readonly placeholder="—">
+                </div>
+                <div class="col-md-10">
+                    <label class="form-label form-label-sm">Not <span class="text-muted">(opsiyonel)</span></label>
+                    <input type="text" class="form-control form-control-sm item-notes-input"
+                           placeholder="Ek açıklama">
+                </div>
+            </div>
+            <input type="hidden" name="items[${idx}].itemId">
+            <input type="hidden" name="items[${idx}].itemName">
+            <input type="hidden" name="items[${idx}].itemCode">
+            <input type="hidden" name="items[${idx}].quantity">
+            <input type="hidden" name="items[${idx}].uom">
+            <input type="hidden" name="items[${idx}].notes">
+        `;
+
+        const select   = row.querySelector('.item-catalog-select');
+        const qtyInput = row.querySelector('.item-qty-input');
+        const uomDisplay = row.querySelector('.item-uom-display');
+        const hiddenId   = row.querySelector(`[name="items[${idx}].itemId"]`);
+        const hiddenName = row.querySelector(`[name="items[${idx}].itemName"]`);
+        const hiddenCode = row.querySelector(`[name="items[${idx}].itemCode"]`);
+        const hiddenQty  = row.querySelector(`[name="items[${idx}].quantity"]`);
+        const hiddenUom  = row.querySelector(`[name="items[${idx}].uom"]`);
+        const hiddenNotes = row.querySelector(`[name="items[${idx}].notes"]`);
+
+        select.addEventListener('change', () => {
+            const opt = select.options[select.selectedIndex];
+            hiddenId.value   = opt.value;
+            hiddenName.value = opt.dataset.name || '';
+            hiddenCode.value = opt.dataset.code || '';
+            hiddenUom.value  = opt.dataset.uom  || 'EA';
+            uomDisplay.value = opt.dataset.uom  || '';
+        });
+
+        qtyInput.addEventListener('input', () => {
+            hiddenQty.value = qtyInput.value;
+        });
+
+        row.querySelector('.item-notes-input').addEventListener('input', e => {
+            hiddenNotes.value = e.target.value;
+        });
+
+        row.querySelector('.remove-item-btn').addEventListener('click', () => {
+            row.remove();
+            updateNoItemsMsg();
+        });
+
+        container.appendChild(row);
+        updateNoItemsMsg();
+    }
+
+    document.getElementById('addItemBtn').addEventListener('click', addItemRow);
+    addItemRow(); // start with one row
+
+    document.getElementById('prForm').addEventListener('submit', function(e) {
+        const rows = document.querySelectorAll('#itemsContainer .item-row');
+        if (rows.length === 0) {
+            e.preventDefault();
+            alert('En az bir kalem eklemelisiniz.');
+            return;
+        }
+        for (const row of rows) {
+            const itemId = row.querySelector('.item-catalog-select').value;
+            const qty    = row.querySelector('.item-qty-input').value;
+            if (!itemId) {
+                e.preventDefault();
+                alert('Lütfen tüm kalemler için katalogdan malzeme seçin.');
+                row.querySelector('.item-catalog-select').focus();
+                return;
+            }
+            if (!qty || parseFloat(qty) <= 0) {
+                e.preventDefault();
+                alert('Lütfen tüm kalemler için geçerli bir miktar girin.');
+                row.querySelector('.item-qty-input').focus();
+                return;
+            }
+        }
+    });
+</script>
+</th:block>
+
+</body>
+</html>
