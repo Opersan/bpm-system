@@ -101,6 +101,12 @@
 			<version>${webjars.locator.version}</version>
 		</dependency>
 
+		<!-- Database Migration -->
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+		</dependency>
+
 		<!-- Test -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
