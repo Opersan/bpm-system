@@ -3,6 +3,7 @@ package com.erp.modules.planning.controller;
 import com.erp.modules.planning.dto.InventoryFilterDto;
 import com.erp.modules.planning.dto.InventoryItemDto;
 import com.erp.modules.planning.dto.ItemCreateRequest;
+import com.erp.modules.planning.dto.MrpActionType;
 import com.erp.modules.planning.dto.MrpRequestDto;
 import com.erp.modules.planning.dto.MrpResultDto;
 import com.erp.modules.planning.dto.SummaryCardDto;
@@ -16,13 +17,17 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/planning")
@@ -43,10 +48,16 @@ public class PlanningController {
         InventoryFilterDto filters = planningService.createInventoryFilter(search, category, warehouse, status, criticalOnly);
         List<InventoryItemDto> inventoryItems = planningService.getInventoryItems(filters);
 
+        // Get stock movements for each inventory item
+        List<List<com.erp.modules.inventory.dto.StockMovementDto>> stockMovements = inventoryItems.stream()
+                .map(item -> planningService.getStockMovementsForItem(item.getMaterialCode(), item.getWarehouse()))
+                .toList();
+
         model.addAttribute("pageTitle", "Envanter");
         model.addAttribute("activePage", "inventory");
         model.addAttribute("breadcrumbs", List.of("Dashboard", "Planlama", "Envanter"));
         model.addAttribute("inventoryItems", inventoryItems);
+        model.addAttribute("stockMovements", stockMovements);
         model.addAttribute("categories", planningService.getCategories());
         model.addAttribute("warehouses", planningService.getWarehouses());
         model.addAttribute("statuses", planningService.getInventoryStatuses());
@@ -100,7 +111,7 @@ public class PlanningController {
         MrpRequestDto mrpRequest = createMrpRequest(startDate, endDate, productGroup, warehouse,
             includeSafetyStock, includeOpenPurchaseOrders, includeOpenWorkOrders);
         boolean hasRun = runId != null && !runId.isBlank();
-        List<MrpResultDto> mrpResults = hasRun ? planningService.runMrp(mrpRequest) : List.of();
+        List<MrpResultDto> mrpResults = hasRun ? planningService.runMrpWithCache(mrpRequest) : List.of();
         List<SummaryCardDto> summaryCards = hasRun ? planningService.getMrpSummaryCards(mrpResults) : List.of();
 
         model.addAttribute("pageTitle", "MRP Planlama");
@@ -174,5 +185,23 @@ public class PlanningController {
         model.addAttribute("breadcrumbs", List.of("Dashboard", "Planlama", "Yeni Kalem"));
         model.addAttribute("itemCreateRequest", request);
         model.addAttribute("uomOptions", planningService.getItemUnits());
+    }
+
+    @PostMapping("/mrp/create-purchase-requests")
+    @ResponseBody
+    public Map<String, Object> createPurchaseRequestsFromMrp(@RequestBody List<Long> resultIds) {
+        List<MrpResultDto> results = planningService.getMrpResultsByIds(resultIds);
+        String username = "currentUser"; // TODO: Get actual username from security context
+        planningService.createPurchaseRequestsFromMrpResults(results, username);
+        return Map.of("success", true, "message", "Satın alma talepleri oluşturuldu.");
+    }
+
+    @PostMapping("/mrp/create-work-orders")
+    @ResponseBody
+    public Map<String, Object> createWorkOrdersFromMrp(@RequestBody List<Long> resultIds) {
+        List<MrpResultDto> results = planningService.getMrpResultsByIds(resultIds);
+        String username = "currentUser"; // TODO: Get actual username from security context
+        planningService.createWorkOrdersFromMrpResults(results, username);
+        return Map.of("success", true, "message", "Üretim emirleri oluşturuldu.");
     }
 }

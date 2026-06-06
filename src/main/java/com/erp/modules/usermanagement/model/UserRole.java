@@ -11,6 +11,7 @@ public enum UserRole {
     PURCHASING_USER("PURCHASING_USER", "Satın Alma", "info"),
     PLANNING_USER("PLANNING_USER", "Planlama", "warning"),
     PRODUCTION_USER("PRODUCTION_USER", "Üretim", "success"),
+    PRODUCTION_SUPERVISOR("PRODUCTION_SUPERVISOR", "Üretim Sorumlusu", "primary"),
     OPERATOR("OPERATOR", "Operatör", "neutral"),
     WAREHOUSE_USER("WAREHOUSE_USER", "Ambar Sorumlusu", "neutral");
 

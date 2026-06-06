@@ -103,9 +103,30 @@
 
         <section class="erp-panel" th:if="${hasRun}">
             <div class="table-responsive">
-                <table class="table erp-table no-datatable align-middle mb-0">
+                <div class="erp-panel__header d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-success" onclick="bulkCreatePurchaseRequest()">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>Seçilenlerden Satın Alma Talebi Oluştur
+                        </button>
+                        <button type="button" class="btn btn-info" onclick="bulkCreateWorkOrder()">
+                            <i class="fas fa-industry me-2"></i>Seçilenlerden Üretim Emri Oluştur
+                        </button>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-light" onclick="selectAll()">
+                            <i class="fas fa-check-circle me-2"></i>Tümünü Seç
+                        </button>
+                        <button type="button" class="btn btn-light" onclick="deselectAll()">
+                            <i class="fas fa-times-circle me-2"></i>Tümünü Kaldır
+                        </button>
+                    </div>
+                </div>
+                <table class="table erp-table no-datatable align-middle mb-0" id="mrpResultsTable">
                     <thead>
                         <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" class="form-check-input" id="selectAllCheckbox" onchange="toggleSelectAll(this)">
+                            </th>
                             <th>Malzeme Kodu</th>
                             <th>Malzeme Adı</th>
                             <th>Kategori</th>
@@ -119,11 +140,13 @@
                             <th>Önerilen Tarih</th>
                             <th>Önerilen Aksiyon</th>
                             <th>Durum</th>
-                            <th class="text-end">Aksiyonlar</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr th:each="result : ${mrpResults}">
+                        <tr th:each="result : ${mrpResults}" class="mrp-result-row" data-id="${result.materialCode}">
+                            <td>
+                                <input type="checkbox" class="form-check-input mrp-result-checkbox" data-id="${result.materialCode}">
+                            </td>
                             <td class="fw-semibold" th:text="${result.materialCode}">BKR-TEL-120</td>
                             <td th:text="${result.materialName}">Bakır Tel</td>
                             <td th:text="${result.category}">Hammadde</td>
@@ -145,28 +168,17 @@
                                       th:classappend="${' erp-badge--' + result.status.cssClass}"
                                       th:text="${result.status.label}">Durum</span>
                             </td>
-                            <td class="text-end">
-                                <div class="dropdown">
-                                    <button class="btn btn-light btn-sm icon-button" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fas fa-ellipsis-h"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li>
-                                            <a class="dropdown-item"
-                                               th:classappend="${result.actionType.name() == 'SATIN_ALMA_OLUSTUR'} ? '' : ' disabled'"
-                                               th:href="@{/purchasing/new(materialCode=${result.materialCode})}">
-                                                Satın Alma Siparişi Oluştur
-                                            </a>
-                                        </li>
-                                        <li><button class="dropdown-item" type="button">İş Emri Oluştur</button></li>
-                                        <li><button class="dropdown-item" type="button">Ertele</button></li>
-                                        <li><button class="dropdown-item text-muted" type="button">Yok Say</button></li>
-                                    </ul>
-                                </div>
-                            </td>
                         </tr>
                     </tbody>
                 </table>
+                <div class="d-flex justify-content-between align-items-center mt-3" th:if="${#lists.isEmpty(mrpResults)}">
+                    <span></span>
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <strong>MRP sonucu bulunamadı</strong>
+                        <span>Planlama kriterlerini değiştirerek tekrar çalıştırın.</span>
+                    </div>
+                </div>
             </div>
 
             <div th:if="${#lists.isEmpty(mrpResults)}" class="empty-state">
@@ -183,9 +195,151 @@
                 <span>Planlama aralığını seçip MRP Çalıştır butonuyla simülasyon sonuçlarını görüntüleyin.</span>
             </div>
         </section>
+
+        <!-- Confirmation Modal -->
+        <div class="modal fade" id="mrpConfirmationModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content erp-modal">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmationModalTitle">Onay</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="confirmationMessage">Onaylıyor musunuz?</p>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Bilgi:</strong>
+                            <span id="confirmationDetails"></span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="button" class="btn btn-primary" id="confirmActionBtn">Onayla</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>
 
+<!-- JavaScript Functions -->
+<th:block th:if="${hasRun}">
+<script th:inline="javascript">
+(function() {
+    const selectedResults = new Set();
+    let pendingAction = null;
+
+    function toggleSelectAll(checkbox) {
+        const checkboxes = document.querySelectorAll('.mrp-result-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
+            const id = cb.getAttribute('data-id');
+            if (checkbox.checked) {
+                selectedResults.add(id);
+            } else {
+                selectedResults.delete(id);
+            }
+        });
+    }
+
+    function selectAll() {
+        const checkbox = document.getElementById('selectAllCheckbox');
+        checkbox.checked = true;
+        toggleSelectAll(checkbox);
+    }
+
+    function deselectAll() {
+        const checkbox = document.getElementById('selectAllCheckbox');
+        checkbox.checked = false;
+        toggleSelectAll(checkbox);
+    }
+
+    function updateSelectedCount() {
+        const count = selectedResults.size;
+        const btns = document.querySelectorAll('.btn-success, .btn-info');
+        btns.forEach(btn => {
+            const text = btn.innerHTML;
+            if (count > 0) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.innerHTML = text.replace(/(\(\d+\))/, `(${count})`);
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+            }
+        });
+    }
+
+    function bulkCreatePurchaseRequest() {
+        showConfirmation('Satın Alma Talebi Oluştur', 'Satın alma talepleri oluşturulacak.', 'create-purchase-requests');
+    }
+
+    function bulkCreateWorkOrder() {
+        showConfirmation('Üretim Emri Oluştur', 'Üretim emirleri oluşturulacak.', 'create-work-orders');
+    }
+
+    function showConfirmation(title, message, action) {
+        pendingAction = action;
+        document.getElementById('confirmationModalTitle').textContent = title;
+        document.getElementById('confirmationMessage').textContent = message;
+        document.getElementById('confirmationDetails').textContent = `${selectedResults.size} adet malzeme seçildi.`;
+        
+        const modal = new bootstrap.Modal(document.getElementById('mrpConfirmationModal'));
+        modal.show();
+    }
+
+    document.getElementById('confirmActionBtn').addEventListener('click', function() {
+        if (!pendingAction || selectedResults.size === 0) {
+            return;
+        }
+
+        const actionUrl = pendingAction === 'create-purchase-requests'
+            ? '/planning/mrp/create-purchase-requests'
+            : '/planning/mrp/create-work-orders';
+
+        fetch(actionUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(Array.from(selectedResults))
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Hata: ' + (data.message || 'Bilinmeyen hata'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+        });
+
+        document.getElementById('mrpConfirmationModal').querySelector('.btn-close').click();
+        pendingAction = null;
+    });
+
+    // Initialize checkbox event listeners
+    document.querySelectorAll('.mrp-result-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const id = this.getAttribute('data-id');
+            if (this.checked) {
+                selectedResults.add(id);
+            } else {
+                selectedResults.delete(id);
+            }
+            updateSelectedCount();
+        });
+    });
+
+    updateSelectedCount();
+})();
+</script>
+</th:block>
 </body>
 </html>

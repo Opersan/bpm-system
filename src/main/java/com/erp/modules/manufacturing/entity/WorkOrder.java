@@ -37,4 +37,7 @@ public class WorkOrder extends BaseEntity {
 
     @OneToMany(mappedBy = "workOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<WorkOrderRequirement> requirements = new ArrayList<>();
+
+    @OneToMany(mappedBy = "workOrder", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<com.erp.modules.production.entity.WorkOrderOperation> operations = new ArrayList<>();
 }

@@ -36,4 +36,13 @@ public class InventoryTransaction extends BaseEntity {
 
     @Column(name = "reference_type")
     private String referenceType;
+
+    @Column(name = "note")
+    private String note;
+
+    @Column(name = "previous_quantity")
+    private Integer previousQuantity;
+
+    @Column(name = "new_quantity")
+    private Integer newQuantity;
 }

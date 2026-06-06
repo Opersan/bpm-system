@@ -9,6 +9,8 @@ import java.time.LocalDate;
 @Getter
 @Builder
 public class InventoryItemDto {
+    private final Long itemId;
+    private final Long warehouseId;
     private final String materialCode;
     private final String materialName;
     private final String category;
