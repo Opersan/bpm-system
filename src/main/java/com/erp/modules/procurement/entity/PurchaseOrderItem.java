@@ -31,6 +31,9 @@ public class PurchaseOrderItem extends BaseEntity {
     private Integer quantity;
 
     @Column(nullable = false)
+    private Integer receivedQuantity = 0;
+
+    @Column(nullable = false)
     private BigDecimal price;
 
     @Column(name = "vat_rate", nullable = false)

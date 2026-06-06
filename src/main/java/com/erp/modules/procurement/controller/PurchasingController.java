@@ -48,19 +48,21 @@ public class PurchasingController {
                          @RequestParam(required = false) String approvalStatus,
                          @RequestParam(required = false) Long supplierId,
                          Model model) {
-        PurchaseOrderFilterDto filters = createFilter(search, status, approvalStatus, supplierId);
-        List<PurchaseOrder> orders = procurementService.getFilteredOrders(filters);
+       PurchaseOrderFilterDto filters = createFilter(search, status, approvalStatus, supplierId);
+       List<PurchaseOrder> orders = procurementService.getFilteredOrders(filters);
 
-        model.addAttribute("pageTitle", "Satın Alma Siparişleri");
-        model.addAttribute("activePage", "procurement");
-        model.addAttribute("orders", orders);
-        model.addAttribute("suppliers", procurementService.getAllSuppliers());
-        model.addAttribute("statuses", POStatus.values());
-        model.addAttribute("approvalStatuses", ApprovalStatus.values());
-        model.addAttribute("filters", filters);
-        model.addAttribute("summaryCards", createSummaryCards(orders));
-        return "purchasing/orders";
-    }
+       model.addAttribute("pageTitle", "Satın Alma Siparişleri");
+       model.addAttribute("activePage", "procurement");
+       model.addAttribute("orders", orders);
+       model.addAttribute("suppliers", procurementService.getAllSuppliers());
+       model.addAttribute("statuses", POStatus.values());
+       model.addAttribute("approvalStatuses", ApprovalStatus.values());
+       model.addAttribute("warehouses", procurementService.getAllWarehouses());
+       model.addAttribute("pendingOrders", procurementService.getPendingPurchaseOrders());
+       model.addAttribute("filters", filters);
+       model.addAttribute("summaryCards", createSummaryCards(orders));
+       return "purchasing/orders";
+   }
 
     @GetMapping("/new")
     public String newOrder(@RequestParam(required = false) String materialCode,
@@ -281,5 +283,22 @@ public class PurchasingController {
         }
         redirectAttributes.addFlashAttribute("successMessage", "Tedarikçi güncellendi.");
         return "redirect:/purchasing/suppliers";
+    }
+
+    @PostMapping("/orders/receive")
+    public String receiveGoods(@Valid @ModelAttribute com.erp.modules.inventory.dto.GoodsReceiptRequest request,
+                               BindingResult bindingResult,
+                               Model model,
+                               RedirectAttributes redirectAttributes) {
+        try {
+            procurementService.receiveGoods(request);
+            redirectAttributes.addFlashAttribute("successMessage", "Mal başarıyla kabul edildi.");
+        } catch (IllegalArgumentException ex) {
+            bindingResult.reject("validation", ex.getMessage());
+            model.addAttribute("errorMessage", ex.getMessage());
+            model.addAttribute("request", request);
+            return "redirect:/purchasing/orders";
+        }
+        return "redirect:/purchasing/orders";
     }
 }

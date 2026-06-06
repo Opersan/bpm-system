@@ -156,6 +156,7 @@ public class UserService {
         addSeedUser("planning", "Planlama Uzmanı", "planning@erp.com", UserRole.PLANNING_USER, true, LocalDateTime.now().minusDays(60));
         addSeedUser("production", "Üretim Sorumlusu", "production@erp.com", UserRole.PRODUCTION_USER, true, LocalDateTime.now().minusDays(55));
         addSeedUser("operator", "Hat Operatörü", "operator@erp.com", UserRole.OPERATOR, true, LocalDateTime.now().minusDays(40));
+        addSeedUser("warehouse", "Ambar Sorumlusu", "warehouse@erp.com", UserRole.WAREHOUSE_USER, true, LocalDateTime.now().minusDays(50));
     }
 
     private void addSeedUser(String username, String fullName, String email, UserRole role, boolean active, LocalDateTime createdAt) {

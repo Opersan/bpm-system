@@ -91,6 +91,10 @@ public class AuthorizationService {
         return hasAnyRole(UserRole.ADMIN, UserRole.PURCHASING_USER, UserRole.MANAGER);
     }
 
+    public boolean canReceiveGoods() {
+        return hasAnyRole(UserRole.ADMIN, UserRole.PURCHASING_USER, UserRole.WAREHOUSE_USER);
+    }
+
     public List<NavigationItemDto> getVisibleNavigationItems(String currentPath) {
         List<NavigationItemDto> items = List.of(
             directItem("dashboard", "Dashboard", "dashboard", "/dashboard", currentPath, List.of("/", "/dashboard")),
@@ -112,6 +116,9 @@ public class AuthorizationService {
             groupedItem("production", "Üretim", "production", currentPath, List.of(
                 link("İş Emri Oluştur", "/production/work-orders/new", currentPath, List.of("/production/work-orders/new", "/manufacturing/new")),
                 link("İş Emirleri", "/production/work-orders", currentPath, List.of("/production/work-orders", "/manufacturing"))
+            )),
+            groupedItem("warehouse", "Ambar", "warehouse", currentPath, List.of(
+                link("Alınacak Siparişler", "/purchasing/orders", currentPath, List.of("/purchasing/orders", "/procurement"))
             )),
             groupedItem("admin", "Yönetim", "admin", currentPath, List.of(
                 link("Kullanıcı Yönetimi", "/admin/users", currentPath, List.of("/admin/users", "/admin/users/new"))
@@ -209,9 +216,9 @@ public class AuthorizationService {
             new RouteRule("/purchasing/suppliers", Set.of("POST"), Set.of(UserRole.ADMIN, UserRole.PURCHASING_USER)),
             new RouteRule("/purchasing/suppliers/*/edit", Set.of("GET"), Set.of(UserRole.ADMIN, UserRole.PURCHASING_USER)),
             new RouteRule("/purchasing/suppliers/*", Set.of("POST"), Set.of(UserRole.ADMIN, UserRole.PURCHASING_USER)),
-            new RouteRule("/purchasing/orders", Set.of("GET"), Set.of(UserRole.ADMIN, UserRole.MANAGER, UserRole.PURCHASING_USER)),
-            new RouteRule("/purchasing/orders", Set.of("POST"), Set.of(UserRole.ADMIN, UserRole.PURCHASING_USER)),
-            new RouteRule("/purchasing/orders/**", Set.of("POST"), Set.of(UserRole.ADMIN, UserRole.PURCHASING_USER)),
+            new RouteRule("/purchasing/orders", Set.of("GET"), Set.of(UserRole.ADMIN, UserRole.MANAGER, UserRole.PURCHASING_USER, UserRole.WAREHOUSE_USER)),
+            new RouteRule("/purchasing/orders", Set.of("POST"), Set.of(UserRole.ADMIN, UserRole.PURCHASING_USER, UserRole.WAREHOUSE_USER)),
+            new RouteRule("/purchasing/orders/**", Set.of("POST"), Set.of(UserRole.ADMIN, UserRole.PURCHASING_USER, UserRole.WAREHOUSE_USER)),
             new RouteRule("/procurement/new", Set.of("GET"), Set.of(UserRole.ADMIN, UserRole.PURCHASING_USER)),
             new RouteRule("/procurement", Set.of("GET"), Set.of(UserRole.ADMIN, UserRole.MANAGER, UserRole.PURCHASING_USER)),
             new RouteRule("/planning/items/new", Set.of("GET"), Set.of(UserRole.ADMIN, UserRole.MANAGER, UserRole.PLANNING_USER)),

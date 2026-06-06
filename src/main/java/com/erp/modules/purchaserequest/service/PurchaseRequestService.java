@@ -140,7 +140,9 @@ public class PurchaseRequestService {
         List<PurchaseOrderItemDto> poItems = buildPoItems(pr, selectedQuote);
         poRequest.setItems(poItems);
 
-        var po = procurementService.createPO(poRequest, true);
+        // When PR is approved by manager, the PO should be created in APPROVED status directly
+        // so it can be used for receiving goods immediately
+        var po = procurementService.createPOForApprovedRequest(poRequest);
 
         pr.setPurchaseOrderId(po.getId());
         pr.setApprovedBy(approverUsername);

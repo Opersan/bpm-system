@@ -157,42 +157,40 @@
                         </div>
                     </div>
 
-                    <!-- Quote Summary Card - Compact, centered layout with buttons at right -->
+                    <!-- Quote Summary Card - Compact, professional layout -->
                     <div class="quote-summary-card" id="quoteSummaryCard" style="display:none;">
-                        <div class="summary-content">
-                            <div class="summary-header">
-                                <i class="fas fa-file-invoice-dollar me-2 text-primary"></i>
-                                <span class="summary-title">Tedarikçi Teklifi Özeti</span>
+                        <div class="summary-header">
+                            <span class="summary-title">Tedarikçi Teklifi Özeti</span>
+                            <span class="summary-badge" id="summaryBadge">-</span>
+                        </div>
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <span class="summary-label">Tedarikçi</span>
+                                <span class="summary-value primary" id="summarySupplierName">-</span>
                             </div>
-                            <div class="summary-info">
-                                <div class="summary-row">
-                                    <span class="summary-label">Tedarikçi:</span>
-                                    <span class="summary-value primary" id="summarySupplierName">-</span>
-                                </div>
-                                <div class="summary-row">
-                                    <span class="summary-label">Toplam Tutar:</span>
-                                    <span class="summary-value amount" id="summaryTotalAmount">-</span>
-                                </div>
-                                <div class="summary-row">
-                                    <span class="summary-label">Para Birimi:</span>
-                                    <span class="summary-value" id="summaryCurrency">-</span>
-                                </div>
-                                <div class="summary-row">
-                                    <span class="summary-label">Tahmini Teslim:</span>
-                                    <span class="summary-value" id="summaryDeliveryDate">-</span>
-                                </div>
-                                <div class="summary-row" th:if="${pr.quotes != null and #lists.size(pr.quotes) > 0}">
-                                    <span class="summary-label">Not:</span>
-                                    <span class="summary-value" id="summaryNotes">-</span>
-                                </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Toplam Tutar</span>
+                                <span class="summary-value amount" id="summaryTotalAmount">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Para Birimi</span>
+                                <span class="summary-value" id="summaryCurrency">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Tahmini Teslim</span>
+                                <span class="summary-value" id="summaryDeliveryDate">-</span>
+                            </div>
+                            <div class="summary-item" id="summaryNotesContainer" style="display:none;">
+                                <span class="summary-label">Not</span>
+                                <span class="summary-value" id="summaryNotes">-</span>
                             </div>
                         </div>
                         <div class="summary-actions">
                             <button type="button" class="btn btn-outline-danger btn-reject-action" id="rejectBtn">
-                                <i class="fas fa-times me-2"></i>Reddet
+                                <i class="fas fa-times me-1"></i>Reddet
                             </button>
                             <button type="button" class="btn btn-success btn-approve-action" id="approveBtn" disabled>
-                                <i class="fas fa-check me-2"></i>Onayla ve Sipariş Oluştur
+                                <i class="fas fa-check me-1"></i>Onayla
                             </button>
                         </div>
                     </div>
@@ -379,18 +377,20 @@
                                      th:if="${pr.status.name() == 'QUOTES_ENTERED'}">
                                     <i class="fas fa-clock me-1"></i>Yönetici teklif seçecek
                                 </div>
-                                <div class="pr-step__detail" th:if="${pr.status.name() == 'SUBMITTED'}">
-                                    Teklifler bekleniyor
+                                <div class="pr-step__detail"
+                                     th:if="${pr.status.name() == 'APPROVED'}">
+                                    <i class="fas fa-check text-success me-1"></i>Onaylandı
                                 </div>
                             </div>
                         </div>
 
                         <!-- Step 4: Satın Alma Siparişi -->
                         <div class="pr-step no-line"
-                             th:classappend="${pr.status.name() == 'APPROVED'} ? ' done' : ' pending'">
+                             th:classappend="${pr.status.name() == 'APPROVED' or pr.status.name() == 'REJECTED'} ? ' done' : ' pending'">
                             <div class="pr-step__icon">
                                 <i th:if="${pr.status.name() == 'APPROVED'}" class="fas fa-check"></i>
-                                <span th:unless="${pr.status.name() == 'APPROVED'}">4</span>
+                                <i th:if="${pr.status.name() == 'REJECTED'}" class="fas fa-times"></i>
+                                <span th:unless="${pr.status.name() == 'APPROVED' or pr.status.name() == 'REJECTED'}">4</span>
                             </div>
                             <div class="pr-step__body">
                                 <div class="pr-step__title">Satın Alma Siparişi</div>
@@ -401,7 +401,11 @@
                                     </a>
                                 </div>
                                 <div class="pr-step__detail"
-                                     th:if="${pr.purchaseOrderId == null and pr.status.name() != 'REJECTED'}">
+                                     th:if="${pr.purchaseOrderId == null and pr.status.name() == 'APPROVED'}">
+                                    <i class="fas fa-check text-success me-1"></i>Onaylandı - PO oluşturuluyor
+                                </div>
+                                <div class="pr-step__detail"
+                                     th:if="${pr.purchaseOrderId == null and pr.status.name() != 'APPROVED' and pr.status.name() != 'REJECTED'}">
                                     Onay sonrası otomatik oluşur
                                 </div>
                                 <div class="pr-step__detail" th:if="${pr.status.name() == 'REJECTED'}">

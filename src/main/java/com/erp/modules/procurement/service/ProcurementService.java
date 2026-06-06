@@ -1,10 +1,17 @@
 package com.erp.modules.procurement.service;
 
+import com.erp.modules.inventory.dto.GoodsReceiptItemDto;
+import com.erp.modules.inventory.dto.GoodsReceiptRequest;
 import com.erp.modules.procurement.dto.CreatePORequest;
 import com.erp.modules.procurement.dto.PurchaseOrderFilterDto;
 import com.erp.modules.procurement.dto.PurchaseOrderItemDto;
 import com.erp.modules.procurement.dto.SupplierCreateRequest;
+import com.erp.modules.inventory.entity.TransactionType;
+import com.erp.modules.inventory.entity.Warehouse;
 import com.erp.modules.procurement.entity.*;
+import com.erp.modules.inventory.repository.InventoryTransactionRepository;
+import com.erp.modules.inventory.repository.StockRepository;
+import com.erp.modules.inventory.repository.WarehouseRepository;
 import com.erp.modules.procurement.repository.ItemRepository;
 import com.erp.modules.procurement.repository.PurchaseOrderRepository;
 import com.erp.modules.procurement.repository.SupplierRepository;
@@ -26,12 +33,23 @@ public class ProcurementService {
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final SupplierRepository supplierRepository;
     private final ItemRepository itemRepository;
+    private final WarehouseRepository warehouseRepository;
+    private final StockRepository stockRepository;
+    private final InventoryTransactionRepository inventoryTransactionRepository;
 
     private static final Locale TR_LOCALE = Locale.forLanguageTag("tr-TR");
 
     @Transactional
     public PurchaseOrder createPO(CreatePORequest request) {
         return createPO(request, false);
+    }
+
+    @Transactional
+    public PurchaseOrder createPOForApprovedRequest(CreatePORequest request) {
+        PurchaseOrder po = createPO(request, false);
+        po.setStatus(POStatus.APPROVED);
+        po.setApprovalStatus(ApprovalStatus.APPROVED);
+        return purchaseOrderRepository.save(po);
     }
 
     @Transactional
@@ -196,5 +214,76 @@ public class ProcurementService {
 
     private String normalizeText(String value) {
         return value != null ? value.trim() : null;
+    }
+
+    @Transactional
+    public void receiveGoods(com.erp.modules.inventory.dto.GoodsReceiptRequest request) {
+        com.erp.modules.procurement.entity.PurchaseOrder po = purchaseOrderRepository.findById(request.getPurchaseOrderId())
+                .orElseThrow(() -> new IllegalArgumentException("Satın alma siparişi bulunamadı."));
+
+        if (po.getStatus() != com.erp.modules.procurement.entity.POStatus.APPROVED &&
+            po.getStatus() != com.erp.modules.procurement.entity.POStatus.PARTIALLY_RECEIVED) {
+            throw new IllegalArgumentException("Sipariş mal alımına uygun değil. Durum: " + po.getStatus().getLabel());
+        }
+
+        com.erp.modules.inventory.entity.Warehouse warehouse = warehouseRepository.findById(request.getWarehouseId())
+                .orElseThrow(() -> new IllegalArgumentException("Depo bulunamadı."));
+
+        boolean allReceived = true;
+
+        for (com.erp.modules.inventory.dto.GoodsReceiptItemDto itemDto : request.getItems()) {
+            if (itemDto.getItemId() == null || itemDto.getQuantity() == null || itemDto.getQuantity() <= 0) {
+                continue;
+            }
+
+            com.erp.modules.procurement.entity.Item item = itemRepository.findById(itemDto.getItemId())
+                    .orElseThrow(() -> new IllegalArgumentException("Malzeme bulunamadı: " + itemDto.getItemId()));
+
+            // Create inventory transaction
+            com.erp.modules.inventory.entity.InventoryTransaction transaction = new com.erp.modules.inventory.entity.InventoryTransaction();
+            transaction.setItem(item);
+            transaction.setWarehouse(warehouse);
+            transaction.setType(com.erp.modules.inventory.entity.TransactionType.IN);
+            transaction.setQuantity(itemDto.getQuantity());
+            transaction.setReferenceId(po.getId());
+            transaction.setReferenceType("PO");
+            inventoryTransactionRepository.save(transaction);
+
+            // Update stock
+            com.erp.modules.inventory.entity.Stock stock = stockRepository.findByItemAndWarehouse(item, warehouse)
+                    .orElse(new com.erp.modules.inventory.entity.Stock(item, warehouse, 0, null));
+            
+            stock.setOnHand(stock.getOnHand() + itemDto.getQuantity());
+            stockRepository.save(stock);
+            
+            // Update received quantity for this item in the PO
+            final com.erp.modules.procurement.entity.Item poItem = item;
+            po.getItems().stream()
+                .filter(i -> i.getItem().getId().equals(poItem.getId()))
+                .findFirst()
+                .ifPresent(i -> i.setReceivedQuantity(i.getReceivedQuantity() + itemDto.getQuantity()));
+        }
+
+        // Update PO status based on whether all items are fully received
+        if (po.getStatus() == com.erp.modules.procurement.entity.POStatus.PARTIALLY_RECEIVED) {
+            // Keep PARTIALLY_RECEIVED if this was a partial receipt
+            po.setStatus(com.erp.modules.procurement.entity.POStatus.PARTIALLY_RECEIVED);
+        } else {
+            // First receipt for APPROVED PO
+            po.setStatus(com.erp.modules.procurement.entity.POStatus.PARTIALLY_RECEIVED);
+        }
+        
+        purchaseOrderRepository.save(po);
+    }
+
+    public java.util.List<com.erp.modules.inventory.entity.Warehouse> getAllWarehouses() {
+        return warehouseRepository.findAll();
+    }
+
+    public java.util.List<com.erp.modules.procurement.entity.PurchaseOrder> getPendingPurchaseOrders() {
+        return purchaseOrderRepository.findByStatusIn(java.util.List.of(
+            com.erp.modules.procurement.entity.POStatus.APPROVED,
+            com.erp.modules.procurement.entity.POStatus.PARTIALLY_RECEIVED
+        ));
     }
 }

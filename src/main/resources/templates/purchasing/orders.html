@@ -99,7 +99,6 @@
                             <th>Sipariş Tarihi</th>
                             <th>Teslim Tarihi</th>
                             <th>Durum</th>
-                            <th>Onay</th>
                             <th class="text-end">Toplam Tutar</th>
                             <th>Oluşturan</th>
                             <th class="text-end">Aksiyonlar</th>
@@ -115,8 +114,10 @@
                             <td th:text="${order.supplier.name}">Tedarikçi</td>
                             <td th:text="${order.orderDate != null ? #temporals.format(order.orderDate, 'dd.MM.yyyy') : '-'}">-</td>
                             <td th:text="${order.expectedDeliveryDate != null ? #temporals.format(order.expectedDeliveryDate, 'dd.MM.yyyy') : '-'}">-</td>
-                            <td><span class="erp-badge" th:classappend="${' erp-badge--' + order.status.cssClass}" th:text="${order.status.label}">Durum</span></td>
-                            <td><span class="erp-badge" th:classappend="${' erp-badge--' + order.approvalStatus.cssClass}" th:text="${order.approvalStatus.label}">Onay</span></td>
+                            <td>
+                                <span class="erp-badge" th:classappend="${' erp-badge--' + order.status.cssClass}"
+                                      th:text="${order.status.label}">Durum</span>
+                            </td>
                             <td class="text-end fw-semibold" th:text="${order.totalAmount != null ? #numbers.formatDecimal(order.totalAmount, 1, 2) + ' ' + order.currency : '0,00'}">0,00</td>
                             <td th:text="${order.createdBy != null ? order.createdBy : '-'}">admin</td>
                             <td class="text-end">
@@ -140,7 +141,69 @@
                                                 <button class="dropdown-item text-danger" type="submit" th:disabled="${order.status.name() == 'CANCELLED' or order.status.name() == 'CLOSED'}">İptal Et</button>
                                             </form>
                                         </li>
+                                        <li th:if="${@authorizationService.canReceiveGoods()}"><hr class="dropdown-divider"></li>
+                                        <li th:if="${@authorizationService.canReceiveGoods()}">
+                                            <button class="dropdown-item" type="button" data-bs-toggle="modal"
+                                                    th:data-bs-target="'#receiveModal-' + ${iter.index}">
+                                                <i class="fas fa-truck-loading me-2"></i>Teslim Al
+                                            </button>
+                                        </li>
                                     </ul>
+                                </div>
+
+                                <div class="modal fade" th:id="'receiveModal-' + ${iter.index}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                        <div class="modal-content erp-modal">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" th:text="${'Teslim Al - ' + order.supplier.name}">Teslim Al</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                                            </div>
+                                            <div class="modal-body text-start">
+Z                                                <form th:action="@{/purchasing/orders/receive}" method="post" id="receiveForm" th:attr="data-index=${iter.index}">
+                                                    <input type="hidden" name="purchaseOrderId" th:value="${order.id}">
+                                                    <div class="mb-3">
+                                                        <label for="warehouseId-[[${iter.index}]]" class="form-label">Depo</label>
+                                                        <select class="form-select" id="warehouseId-[[${iter.index}]]" name="warehouseId" required>
+                                                            <option value="" selected disabled>Depo Seçiniz...</option>
+                                                            <option th:each="wh : ${warehouses}"
+                                                                    th:value="${wh.id}"
+                                                                    th:text="${wh.name}">Depo</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="table-responsive">
+                                                        <table class="table erp-table no-datatable mb-0">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Malzeme</th>
+                                                                    <th>Sipariş Miktarı</th>
+                                                                    <th>Alınacak Miktar</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <tr th:each="item : ${order.items}">
+                                                                    <td th:text="${item.item.name}">Malzeme</td>
+                                                                    <td class="text-end" th:text="${item.quantity}">0</td>
+                                                                    <td class="text-end">
+                                                                        <input type="hidden" name="items[__${iter.index}__].itemId" th:value="${item.item.id}">
+                                                                        <input type="number" class="form-control text-end"
+                                                                               name="items[__${iter.index}__].quantity"
+                                                                               min="1"
+                                                                               max="${item.quantity - item.receivedQuantity}"
+                                                                               th:value="${item.quantity - item.receivedQuantity}"
+                                                                               required>
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                                                <button type="button" class="btn btn-success" th:attr="onclick='submitReceiveForm(' + ${iter.index} + ')'">Teslim Al</button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="modal fade" th:id="'orderDetailModal-' + ${iter.index}" tabindex="-1" aria-hidden="true">
@@ -205,5 +268,36 @@
 
 </div>
 
+<script th:inline="none">
+function submitReceiveForm(index) {
+    const form = document.getElementById('receiveForm');
+    if (form) {
+        // Validate warehouse selection
+        const warehouseSelect = document.getElementById('warehouseId-' + index);
+        if (!warehouseSelect || !warehouseSelect.value) {
+            alert('Lütfen bir depo seçin.');
+            return;
+        }
+        
+        // Validate at least one item has quantity
+        let hasQuantity = false;
+        const inputs = form.querySelectorAll('input[name*=".quantity"]');
+        inputs.forEach(input => {
+            if (parseInt(input.value) > 0) {
+                hasQuantity = true;
+            }
+        });
+        
+        if (!hasQuantity) {
+            alert('Lütfen en az bir ürün için alım miktarı girin.');
+            return;
+        }
+        
+        form.submit();
+    }
+}
+</script>
+
 </body>
 </html>
+
