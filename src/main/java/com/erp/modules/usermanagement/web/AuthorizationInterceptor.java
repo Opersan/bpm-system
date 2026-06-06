@@ -20,7 +20,19 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        if (authorizationService.canAccessPath(request.getRequestURI(), request.getMethod())) {
+        String uri = request.getRequestURI();
+        String method = request.getMethod();
+        
+        // Skip authorization for /api/** endpoints (handled by Spring Security which has permitAll)
+        if (uri.startsWith("/api/")) {
+            return true;
+        }
+        
+        boolean allowed = authorizationService.canAccessPath(uri, method);
+        
+        System.out.println("Authorization: " + method + " " + uri + " = " + (allowed ? "ALLOWED" : "DENIED"));
+        
+        if (allowed) {
             return true;
         }
 

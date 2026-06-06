@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title th:text="${pageTitle}">Operasyonlar</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+
+    <div class="erp-page">
+        <div class="erp-page-header">
+            <div>
+                <nav class="erp-breadcrumb" aria-label="breadcrumb">
+                    <a th:href="@{/dashboard}" th:text="${breadcrumbs[0]}">Dashboard</a>
+                    <span th:text="${breadcrumbs[1]}">Üretim</span>
+                    <span th:text="${breadcrumbs[2]}">Operasyonlar</span>
+                </nav>
+                <h2 th:text="${pageTitle}">Operasyonlar</h2>
+                <p>Operasyonları yönetin ve tanımlayın.</p>
+            </div>
+            <a th:href="@{/production/operations/new}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Yeni Operasyon
+            </a>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success purchasing-notice" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-danger purchasing-notice" th:text="${errorMessage}"></div>
+
+        <section class="erp-panel filter-panel">
+            <form th:action="@{/production/operations}" method="get">
+                <div class="row g-3 align-items-end">
+                    <div class="col-xl-3 col-md-6">
+                        <label for="search" class="form-label">Arama</label>
+                        <input id="search" name="search" type="search" class="form-control"
+                               placeholder="Operasyon kodu veya adı"
+                               th:value="${filter.search}">
+                    </div>
+                    <div class="col-xl-2 col-md-6">
+                        <label for="active" class="form-label">Durum</label>
+                        <select id="active" name="active" class="form-select">
+                            <option value="">Tümü</option>
+                            <option value="true" th:selected="${filter.active != null and filter.active == true}">Aktif</option>
+                            <option value="false" th:selected="${filter.active != null and filter.active == false}">Pasif</option>
+                        </select>
+                    </div>
+                    <div class="col-xl-7">
+                        <div class="planning-filter-actions">
+                            <button type="submit" class="btn btn-primary">Filtrele</button>
+                            <a th:href="@{/production/operations}" class="btn btn-light">Filtreleri Temizle</a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <section class="erp-panel mt-4">
+            <div class="table-responsive">
+                <table class="table erp-table align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th>Operasyon Kodu</th>
+                        <th>Operasyon Adı</th>
+                        <th>Standart Süre</th>
+                        <th>Süre Birimi</th>
+                        <th>Malzeme Sayısı</th>
+                        <th>Durum</th>
+                        <th class="text-end">Aksiyonlar</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(operations)}">
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-clipboard-list"></i>
+                            <strong>Kayıt bulunamadı</strong>
+                        </td>
+                    </tr>
+                    <tr th:each="operation : ${operations}">
+                        <td>
+                            <span class="fw-semibold" th:text="${operation.code}">OP-001</span>
+                        </td>
+                        <td th:text="${operation.name}">Operasyon Adı</td>
+                        <td class="text-end" th:text="${#numbers.formatDecimal(operation.standardDuration, 1, 2)}">30</td>
+                        <td th:text="${operation.durationUnit}">MINUTES</td>
+                        <td class="text-center" th:text="${operation.materialRequirementCount}">2</td>
+                        <td>
+                            <span class="erp-badge" th:classappend="${operation.active ? 'erp-badge--success' : 'erp-badge--danger'}"
+                                  th:text="${operation.active ? 'Aktif' : 'Pasif'}">Aktif</span>
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group">
+                                <a th:href="@{/production/operations/{id}(id=${operation.id})}" class="btn btn-sm btn-outline-secondary" title="Görüntüle">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a th:href="@{/production/operations/{id}/edit(id=${operation.id})}" class="btn btn-sm btn-outline-primary" title="Düzenle">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form th:if="${operation.active}" th:action="@{/production/operations/{id}/deactivate(id=${operation.id})}" method="post" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Pasifleştir" onclick="return confirm('Bu operasyonu pasif hale getirmek istediğinize emin misiniz?');">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+</div>
+
+</body>
+</html>

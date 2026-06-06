@@ -159,7 +159,7 @@
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
                                             </div>
                                             <div class="modal-body text-start">
-                                                 <form th:action="@{/purchasing/orders/receive}" method="post" id="receiveForm" class="receive-form">
+                                                 <form th:action="@{/purchasing/orders/receive}" method="post" id="receiveForm" class="receive-form" th:attr="data-iter-index=${iter.index}">
                                                     <input type="hidden" name="purchaseOrderId" th:value="${order.id}">
                                                     <div class="mb-3">
                                                         <label for="warehouseId-[[${iter.index}]]" class="form-label">Depo</label>
@@ -184,9 +184,9 @@
                                                                     <td th:text="${item.item.name}">Malzeme</td>
                                                                     <td class="text-end" th:text="${item.quantity}">0</td>
                                                                     <td class="text-end">
-                                                                        <input type="hidden" name="items[__${iter.index}__].itemId" th:value="${item.item.id}">
+                                                                        <input type="hidden" th:name="'items[' + ${iter.index} + '].itemId'" th:value="${item.item.id}">
                                                                         <input type="number" class="form-control text-end"
-                                                                               name="items[__${iter.index}__].quantity"
+                                                                               th:name="'items[' + ${iter.index} + '].quantity'"
                                                                                min="1"
                                                                                max="${item.quantity - item.receivedQuantity}"
                                                                                th:value="${item.quantity - item.receivedQuantity}"
@@ -196,12 +196,12 @@
                                                             </tbody>
                                                         </table>
                                                     </div>
-                                                </form>
                                             </div>
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                                                <button type="button" class="btn btn-success receive-btn">Teslim Al</button>
+                                                <button type="submit" class="btn btn-success">Teslim Al</button>
                                             </div>
+                                                </form>
                                         </div>
                                     </div>
                                 </div>
@@ -228,7 +228,8 @@
                                                             <tr>
                                                                 <th>Malzeme</th>
                                                                 <th>Kod</th>
-                                                                <th class="text-end">Miktar</th>
+                                                                <th class="text-end">Sipariş Miktarı</th>
+                                                                <th class="text-end">Teslim Alınan</th>
                                                                 <th>Birim</th>
                                                                 <th class="text-end">Birim Fiyat</th>
                                                                 <th class="text-end">KDV %</th>
@@ -240,6 +241,7 @@
                                                                 <td th:text="${line.item.name}">Malzeme</td>
                                                                 <td th:text="${line.item.code}">Kod</td>
                                                                 <td class="text-end" th:text="${line.quantity}">0</td>
+                                                                <td class="text-end" th:text="${line.receivedQuantity != null ? line.receivedQuantity : 0}">0</td>
                                                                 <td th:text="${line.item.uom}">Adet</td>
                                                                 <td class="text-end" th:text="${#numbers.formatDecimal(line.price, 1, 2)}">0</td>
                                                                 <td class="text-end" th:text="${#numbers.formatDecimal(line.vatRate, 1, 2)}">20</td>
@@ -271,54 +273,43 @@
 <script>
 // Handle receiving form submission for each modal
 document.addEventListener('DOMContentLoaded', function() {
-    // Get all receive modal buttons
-    const receiveModalButtons = document.querySelectorAll('[data-bs-toggle="modal"]');
+    // Find all receive forms
+    const forms = document.querySelectorAll('.receive-form');
     
-    receiveModalButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Find the modal that will be shown
-            const targetModalId = this.getAttribute('data-bs-target');
-            if (!targetModalId) return;
+    console.log('Found ' + forms.length + ' receive forms');
+    
+    forms.forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            console.log('Form submit triggered');
             
-            const modalElement = document.querySelector(targetModalId);
-            if (!modalElement) return;
-            
-            // Add submit handler to the form in this modal
-            const form = modalElement.querySelector('.receive-form');
-            if (!form) return;
-            
-            // Remove any existing handlers by cloning the form
-            const newForm = form.cloneNode(true);
-            form.parentNode.replaceChild(newForm, form);
-            
-            // Add submit handler
-            newForm.addEventListener('submit', function(e) {
+            // Validate warehouse
+            const warehouseSelect = form.querySelector('select[name="warehouseId"]');
+            if (!warehouseSelect || !warehouseSelect.value) {
+                console.log('Warehouse validation failed');
+                alert('Lütfen bir depo seçin.');
                 e.preventDefault();
-                
-                // Validate warehouse
-                const warehouseSelect = newForm.querySelector('select[name="warehouseId"]');
-                if (!warehouseSelect || !warehouseSelect.value) {
-                    alert('Lütfen bir depo seçin.');
-                    return;
+                return;
+            }
+            console.log('Warehouse validated: ' + warehouseSelect.value);
+            
+            // Validate at least one item has quantity
+            const inputs = form.querySelectorAll('input[name*=".quantity"]');
+            let hasQuantity = false;
+            inputs.forEach(input => {
+                if (parseInt(input.value) > 0) {
+                    hasQuantity = true;
                 }
-                
-                // Validate at least one item has quantity
-                const inputs = newForm.querySelectorAll('input[name*=".quantity"]');
-                let hasQuantity = false;
-                inputs.forEach(input => {
-                    if (parseInt(input.value) > 0) {
-                        hasQuantity = true;
-                    }
-                });
-                
-                if (!hasQuantity) {
-                    alert('Lütfen en az bir ürün için alım miktarı girin.');
-                    return;
-                }
-                
-                // Submit the form
-                newForm.submit();
             });
+            
+            if (!hasQuantity) {
+                console.log('Quantity validation failed');
+                alert('Lütfen en az bir ürün için alım miktarı girin.');
+                e.preventDefault();
+                return;
+            }
+            console.log('Quantity validated, submitting form...');
+            
+            // All validations passed, let the form submit normally
         });
     });
 });

@@ -23,7 +23,7 @@
                 <a th:if="${@authorizationService.canCreatePlanningItem()}" th:href="@{/planning/items/new}" class="btn btn-outline-secondary">
                     <i class="fas fa-box-open me-2"></i>Yeni Kalem
                 </a>
-                <a th:href="@{/planning/mrp}" class="btn btn-outline-primary">
+                <a th:if="${!@authorizationService.canPerformStockOperations()}" th:href="@{/planning/mrp}" class="btn btn-outline-primary">
                     <i class="fas fa-magic me-2"></i>MRP Planlama
                 </a>
             </div>
@@ -140,13 +140,46 @@
                                                 Görüntüle
                                             </button>
                                         </li>
-                                        <li><button class="dropdown-item" type="button">Stok Hareketleri</button></li>
-                                        <li>
-                                            <a class="dropdown-item" th:href="@{/planning/mrp(materialCode=${item.materialCode})}">MRP’ye Ekle</a>
+                                        <!-- Stock movements - for warehouse users -->
+                                        <li th:if="${@authorizationService.canViewStockMovements()}">
+                                            <button class="dropdown-item" type="button" data-bs-toggle="modal"
+                                                    th:data-bs-target="'#stockMovementsModal-' + ${iter.index}">
+                                                Stok Hareketleri
+                                            </button>
+                                        </li>
+                                        <!-- Stock operations - for warehouse users -->
+                                        <li th:if="${@authorizationService.canPerformStockOperations()}">
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li th:if="${@authorizationService.canPerformStockOperations()}">
+                                            <button class="dropdown-item" type="button" data-bs-toggle="modal"
+                                                    th:data-bs-target="'#stockInModal-' + ${iter.index}">
+                                                Manuel Stok Girişi
+                                            </button>
+                                        </li>
+                                        <li th:if="${@authorizationService.canPerformStockOperations()}">
+                                            <button class="dropdown-item" type="button" data-bs-toggle="modal"
+                                                    th:data-bs-target="'#stockOutModal-' + ${iter.index}">
+                                                Manuel Stok Çıkışı
+                                            </button>
+                                        </li>
+                                        <li th:if="${@authorizationService.canPerformStockOperations()}">
+                                            <button class="dropdown-item" type="button" data-bs-toggle="modal"
+                                                    th:data-bs-target="'#stockAdjustModal-' + ${iter.index}">
+                                                Stok Düzelt
+                                            </button>
+                                        </li>
+                                        <!-- MRP actions - for non-warehouse users -->
+                                        <li th:if="${!@authorizationService.canPerformStockOperations()}">
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li th:if="${!@authorizationService.canPerformStockOperations()}">
+                                            <a class="dropdown-item" th:href="@{/planning/mrp(materialCode=${item.materialCode})}">MRP'ye Ekle</a>
                                         </li>
                                     </ul>
                                 </div>
 
+                                <!-- Inventory Detail Modal -->
                                 <div class="modal fade" th:id="'inventoryDetailModal-' + ${iter.index}" tabindex="-1" aria-hidden="true">
                                     <div class="modal-dialog modal-lg modal-dialog-scrollable">
                                         <div class="modal-content erp-modal">
@@ -166,6 +199,184 @@
                                                     <div><span>Son Hareket</span><strong th:text="${#temporals.format(item.lastMovementDate, 'dd.MM.yyyy')}">Tarih</strong></div>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Stock Movements Modal -->
+                                <div class="modal fade" th:id="'stockMovementsModal-' + ${iter.index}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                                        <div class="modal-content erp-modal">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Stok Hareketleri - <span th:text="${item.materialCode + ' - ' + item.warehouse}">Malzeme - Depo</span></h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="table-responsive">
+                                                    <table class="table erp-table no-datatable">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Tarih</th>
+                                                                <th>Hareket Tipi</th>
+                                                                <th>Miktar</th>
+                                                                <th>Önceki Stok</th>
+                                                                <th>Sonraki Stok</th>
+                                                                <th>Depo</th>
+                                                                <th>Referans</th>
+                                                                <th>İşlemi Yapan</th>
+                                                                <th>Açıklama</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr th:each="txn : ${stockMovements.get(iter.index)}">
+                                                                <td th:text="${#temporals.format(txn.createdAt, 'dd.MM.yyyy HH:mm')}">Tarih</td>
+                                                                <td>
+                                                                    <span class="erp-badge"
+                                                                          th:classappend="${' erp-badge--' + (txn.type.name() == 'IN' ? 'success' : (txn.type.name() == 'OUT' ? 'danger' : 'warning'))}"
+                                                                          th:text="${txn.type.name() == 'IN' ? 'Giriş' : (txn.type.name() == 'OUT' ? 'Çıkış' : 'Düzeltme')}">Tip</span>
+                                                                </td>
+                                                                <td th:text="${txn.quantity}">0</td>
+                                                                <td th:text="${txn.previousQuantity}">0</td>
+                                                                <td th:text="${txn.newQuantity}">0</td>
+                                                                <td th:text="${txn.warehouse}">Depo</td>
+                                                                <td th:text="${txn.referenceId}">Referans</td>
+                                                                <td th:text="${txn.createdBy}">Kullanıcı</td>
+                                                                <td th:text="${txn.note}">Açıklama</td>
+                                                            </tr>
+                                                            <tr th:if="${#lists.isEmpty(stockMovements.get(iter.index))}">
+                                                                <td colspan="9" class="text-center py-4">
+                                                                    <i class="fas fa-info-circle me-2"></i>
+                                                                    <span>Stok hareketi bulunmamaktadır.</span>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Stock In Modal -->
+                                <div class="modal fade" th:id="'stockInModal-' + ${iter.index}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content erp-modal">
+                                            <form th:id="'stockInForm-' + ${iter.index}" class="stock-in-form">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Manuel Stok Girişi</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <input type="hidden" name="itemId" th:value="${item.itemId}">
+                                                    <input type="hidden" name="warehouseId" th:value="${item.warehouseId}">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Malzeme Kodu</label>
+                                                        <input type="text" class="form-control-plaintext" th:value="${item.materialCode}" readonly>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Depo</label>
+                                                        <input type="text" class="form-control-plaintext" th:value="${item.warehouse}" readonly>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="stockInQuantity" class="form-label">Giriş Miktarı</label>
+                                                        <input type="number" class="form-control text-end" th:id="'stockInQuantity-' + ${iter.index}" name="quantity" min="1" required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="stockInNote" class="form-label">Açıklama (Zorunlu)</label>
+                                                        <textarea class="form-control" th:id="'stockInNote-' + ${iter.index}" name="note" rows="3" required></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                                                    <button type="button" class="btn btn-success stock-in-submit">Stok Gir</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Stock Out Modal -->
+                                <div class="modal fade" th:id="'stockOutModal-' + ${iter.index}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content erp-modal">
+                                            <form th:id="'stockOutForm-' + ${iter.index}" class="stock-out-form">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Manuel Stok Çıkışı</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <input type="hidden" name="itemId" th:value="${item.itemId}">
+                                                    <input type="hidden" name="warehouseId" th:value="${item.warehouseId}">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Malzeme Kodu</label>
+                                                        <input type="text" class="form-control-plaintext" th:value="${item.materialCode}" readonly>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Depo</label>
+                                                        <input type="text" class="form-control-plaintext" th:value="${item.warehouse}" readonly>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Mevcut Stok</label>
+                                                        <input type="text" class="form-control-plaintext" th:value="${#numbers.formatDecimal(item.currentStock, 1, 2) + ' ' + item.unit}" readonly>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="stockOutQuantity" class="form-label">Çıkış Miktarı</label>
+                                                        <input type="number" class="form-control text-end" th:id="'stockOutQuantity-' + ${iter.index}" name="quantity" min="1" max="${item.currentStock}" required>
+                                                        <small class="form-text text-muted">Maksimum: <span th:text="${#numbers.formatDecimal(item.currentStock, 1, 2)}">0</span> <span th:text="${item.unit}">unit</span></small>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="stockOutNote" class="form-label">Açıklama (Zorunlu)</label>
+                                                        <textarea class="form-control" th:id="'stockOutNote-' + ${iter.index}" name="note" rows="3" required></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                                                    <button type="button" class="btn btn-danger stock-out-submit">Stok Çıkış</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Stock Adjust Modal -->
+                                <div class="modal fade" th:id="'stockAdjustModal-' + ${iter.index}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content erp-modal">
+                                            <form th:id="'stockAdjustForm-' + ${iter.index}" class="stock-adjust-form">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Stok Düzelt</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <input type="hidden" name="itemId" th:value="${item.itemId}">
+                                                    <input type="hidden" name="warehouseId" th:value="${item.warehouseId}">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Malzeme Kodu</label>
+                                                        <input type="text" class="form-control-plaintext" th:value="${item.materialCode}" readonly>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Depo</label>
+                                                        <input type="text" class="form-control-plaintext" th:value="${item.warehouse}" readonly>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Mevcut Stok</label>
+                                                        <input type="text" class="form-control-plaintext" th:value="${#numbers.formatDecimal(item.currentStock, 1, 2) + ' ' + item.unit}" readonly>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="stockAdjustQuantity" class="form-label">Yeni Stok Miktarı</label>
+                                                        <input type="number" class="form-control text-end" th:id="'stockAdjustQuantity-' + ${iter.index}" name="quantity" min="0" required>
+                                                        <small class="form-text text-muted">Mevcut: <span th:text="${#numbers.formatDecimal(item.currentStock, 1, 2)}">0</span> | Fark: <strong th:id="'adjustDifference-' + ${iter.index}">0</strong></small>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="stockAdjustNote" class="form-label">Açıklama (Zorunlu)</label>
+                                                        <textarea class="form-control" th:id="'stockAdjustNote-' + ${iter.index}" name="note" rows="3" required></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                                                    <button type="button" class="btn btn-warning stock-adjust-submit">Düzelt</button>
+                                                </div>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>
@@ -201,5 +412,145 @@
 
 </div>
 
-</body>
-</html>
+<div layout:fragment="extra-scripts">
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function() {
+            // Stock In Form Submission
+            $('.stock-in-submit').on('click', function() {
+                var form = $(this).closest('form');
+                var itemId = form.find('[name="itemId"]').val();
+                var warehouseId = form.find('[name="warehouseId"]').val();
+                var quantity = parseInt(form.find('[name="quantity"]').val());
+                var note = form.find('[name="note"]').val();
+                
+                console.log('Stock In - itemId:', itemId, 'warehouseId:', warehouseId, 'quantity:', quantity, 'note:', note);
+                
+                if (!note || note.trim() === '') {
+                    alert('Lütfen açıklamayı girin.');
+                    return;
+                }
+                
+                var formData = {
+                    itemId: itemId,
+                    warehouseId: warehouseId,
+                    quantity: quantity,
+                    note: note
+                };
+                
+                console.log('Sending request:', JSON.stringify(formData));
+                
+                $.ajax({
+                    url: '/api/inventory/stock-in',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        console.log('Success:', response);
+                        if (response.success) {
+                            alert(response.message);
+                            window.location.reload();
+                        } else {
+                            alert('Hata: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Error:', status, error, xhr.responseText);
+                        alert('İşlem başarısız. Check console for details.');
+                    }
+                });
+            });
+            
+            // Stock Out Form Submission
+            $('.stock-out-submit').on('click', function() {
+                var form = $(this).closest('form');
+                var itemId = form.find('[name="itemId"]').val();
+                var warehouseId = form.find('[name="warehouseId"]').val();
+                var quantity = parseInt(form.find('[name="quantity"]').val());
+                var note = form.find('[name="note"]').val();
+                
+                console.log('Stock Out - itemId:', itemId, 'warehouseId:', warehouseId, 'quantity:', quantity, 'note:', note);
+                
+                if (!note || note.trim() === '') {
+                    alert('Lütfen açıklamayı girin.');
+                    return;
+                }
+                
+                var formData = {
+                    itemId: itemId,
+                    warehouseId: warehouseId,
+                    quantity: quantity,
+                    note: note
+                };
+                
+                console.log('Sending request:', JSON.stringify(formData));
+                
+                $.ajax({
+                    url: '/api/inventory/stock-out',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        console.log('Success:', response);
+                        if (response.success) {
+                            alert(response.message);
+                            window.location.reload();
+                        } else {
+                            alert('Hata: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Error:', status, error, xhr.responseText);
+                        alert('İşlem başarısız. Check console for details.');
+                    }
+                });
+            });
+            
+            // Stock Adjust Form Submission
+            $('.stock-adjust-submit').on('click', function() {
+                var form = $(this).closest('form');
+                var itemId = form.find('[name="itemId"]').val();
+                var warehouseId = form.find('[name="warehouseId"]').val();
+                var quantity = parseInt(form.find('[name="quantity"]').val());
+                var note = form.find('[name="note"]').val();
+                
+                console.log('Stock Adjust - itemId:', itemId, 'warehouseId:', warehouseId, 'quantity:', quantity, 'note:', note);
+                
+                if (!note || note.trim() === '') {
+                    alert('Lütfen açıklamayı girin.');
+                    return;
+                }
+                
+                var formData = {
+                    itemId: itemId,
+                    warehouseId: warehouseId,
+                    quantity: quantity,
+                    note: note
+                };
+                
+                console.log('Sending request:', JSON.stringify(formData));
+                
+                $.ajax({
+                    url: '/api/inventory/stock-adjust',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        console.log('Success:', response);
+                        if (response.success) {
+                            alert(response.message);
+                            window.location.reload();
+                        } else {
+                            alert('Hata: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Error:', status, error, xhr.responseText);
+                        alert('İşlem başarısız. Check console for details.');
+                    }
+                });
+            });
+        });
+        /*]]>*/
+    </script>
+</div>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Operations Form</title>
+</head>
+<body>
+
+<span th:fragment="script">
+<script th:inline="javascript">
+/* <![CDATA[ */
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize material requirements table
+    initMaterialRequirements();
+    
+    // Add material row button
+    document.getElementById('addMaterialRow')?.addEventListener('click', function() {
+        addMaterialRow();
+    });
+    
+    // Update summary when form changes
+    document.querySelectorAll('input, select').forEach(function(el) {
+        el.addEventListener('change', updateSummary);
+        el.addEventListener('input', updateSummary);
+    });
+});
+
+function initMaterialRequirements() {
+    // Load available items for selection
+    fetchItems(function(items) {
+        const selects = document.querySelectorAll('.material-item-select');
+        selects.forEach(function(select) {
+            select.innerHTML = '<option value="">Malzeme seçiniz</option>';
+            items.forEach(function(item) {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = item.code + ' - ' + item.name;
+                if (select.dataset.currentId === item.id.toString()) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        });
+        
+        // Update material count
+        updateMaterialCount();
+    });
+}
+
+function fetchItems(callback) {
+    // Placeholder - in real implementation, fetch from /api/items endpoint
+    // For now, use a mock list based on what items are available
+    const mockItems = [
+        { id: 1, code: 'ITEM-001', name: 'Steel Sheet', uom: 'SHEET' },
+        { id: 2, code: 'ITEM-002', name: 'Electronic Circuit Board', uom: 'UNIT' },
+        { id: 3, code: 'ITEM-003', name: 'Plastic Casing', uom: 'UNIT' },
+        { id: 4, code: 'PROD-001', name: 'Smart Widget', uom: 'UNIT' }
+    ];
+    callback(mockItems);
+}
+
+function addMaterialRow() {
+    const tbody = document.getElementById('materialRequirementsTableBody');
+    const row = document.getElementById('materialRequirementRowTemplate');
+    
+    const newIdx = tbody.children.length;
+    const clone = row.cloneNode(true);
+    clone.style.display = 'table-row';
+    clone.removeAttribute('id');
+    
+    // Update names with new index
+    clone.querySelectorAll('input, select').forEach(function(el) {
+        if (el.name) {
+            el.name = el.name.replace('[0]', '[' + newIdx + ']');
+        }
+        if (el.id) {
+            el.id = el.id.replace('[0]', '[' + newIdx + ']');
+        }
+    });
+    
+    // Add remove button handler
+    clone.querySelector('.remove-material-row')?.addEventListener('click', function() {
+        this.closest('tr').remove();
+        updateMaterialCount();
+    });
+    
+    tbody.appendChild(clone);
+    updateMaterialCount();
+}
+
+function removeMaterialRow(button) {
+    button.closest('tr').remove();
+    updateMaterialCount();
+}
+
+function updateMaterialCount() {
+    const count = document.querySelectorAll('#materialRequirementsTableBody tr.material-row').length;
+    document.getElementById('summaryMaterialCount').textContent = count;
+}
+
+function updateSummary() {
+    const code = document.getElementById('code')?.value || '-';
+    const name = document.getElementById('name')?.value || '-';
+    const duration = document.getElementById('standardDuration')?.value || '0';
+    const unit = document.getElementById('durationUnit')?.value || '';
+    
+    document.getElementById('summaryCode').textContent = code || '-';
+    document.getElementById('summaryName').textContent = name || '-';
+    document.getElementById('summaryDuration').textContent = duration ? duration + ' ' + unit : '-';
+    
+    // Update active status
+    const active = document.getElementById('active')?.checked ?? true;
+    const statusEl = document.getElementById('summaryStatus');
+    statusEl.textContent = active ? 'Aktif' : 'Pasif';
+    statusEl.style.color = active ? '#198754' : '#dc3545';
+}
+
+/* ]]> */
+</script>
+</span>
+
+</body>
+</html>

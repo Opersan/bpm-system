@@ -14,6 +14,10 @@ import com.erp.modules.planning.dto.InventoryItemDto;
 import com.erp.modules.planning.dto.InventoryStatus;
 import com.erp.modules.planning.dto.ItemCreateRequest;
 import com.erp.modules.planning.dto.MrpActionType;
+import com.erp.modules.purchaserequest.dto.PurchaseRequestCreateDto;
+import com.erp.modules.purchaserequest.service.PurchaseRequestService;
+import com.erp.modules.production.dto.WorkOrderCreateRequest;
+import com.erp.modules.production.service.ProductionService;
 import com.erp.modules.planning.dto.MrpRequestDto;
 import com.erp.modules.planning.dto.MrpResultDto;
 import com.erp.modules.planning.dto.MrpStatus;
@@ -42,6 +46,9 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.erp.modules.inventory.dto.StockMovementDto;
+import com.erp.modules.inventory.service.InventoryService;
+
 @Service
 @RequiredArgsConstructor
 public class PlanningService {
@@ -57,6 +64,11 @@ public class PlanningService {
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final WorkOrderRepository workOrderRepository;
     private final WorkOrderRequirementRepository workOrderRequirementRepository;
+    private final InventoryService inventoryService;
+    private final PurchaseRequestService purchaseRequestService;
+    private final ProductionService productionService;
+
+    private List<MrpResultDto> mrpResultsCache;
 
     public InventoryFilterDto createInventoryFilter(String search, String category, String warehouse,
                                                     String status, boolean criticalOnly) {
@@ -192,13 +204,20 @@ public class PlanningService {
             .toList();
     }
 
+    @Transactional
+    public List<MrpResultDto> runMrpWithCache(MrpRequestDto request) {
+        List<MrpResultDto> results = runMrp(request);
+        this.mrpResultsCache = results;
+        return results;
+    }
+
     public List<SummaryCardDto> getMrpSummaryCards(List<MrpResultDto> results) {
         BigDecimal totalNetRequirement = results.stream()
             .map(MrpResultDto::getNetRequirement)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         long purchasingSuggestions = results.stream()
-            .filter(result -> result.getActionType() == MrpActionType.SATIN_ALMA_OLUSTUR)
+            .filter(result -> result.getActionType() == MrpActionType.SATIN_ALMA_TALEBI_OLUSTUR)
             .count();
 
         long workOrderSuggestions = results.stream()
@@ -278,6 +297,8 @@ public class PlanningService {
         BigDecimal maximumStock = minimumStock.multiply(BigDecimal.valueOf(3));
 
         return InventoryItemDto.builder()
+            .itemId(item.getId())
+            .warehouseId(stock.getWarehouse().getId())
             .materialCode(item.getCode())
             .materialName(item.getName())
             .category(deriveCategory(item))
@@ -297,7 +318,11 @@ public class PlanningService {
         BigDecimal minimumStock = deriveMinimumStock(item);
         BigDecimal maximumStock = minimumStock.multiply(BigDecimal.valueOf(3));
 
+        Warehouse warehouse = warehouseRepository.findByName(warehouseName).orElse(null);
+
         return InventoryItemDto.builder()
+            .itemId(item.getId())
+            .warehouseId(warehouse != null ? warehouse.getId() : null)
             .materialCode(item.getCode())
             .materialName(item.getName())
             .category(deriveCategory(item))
@@ -387,7 +412,7 @@ public class PlanningService {
         if ("Yarı Mamul".equals(deriveCategory(item))) {
             return MrpActionType.URETIM_EMRI_OLUSTUR;
         }
-        return MrpActionType.SATIN_ALMA_OLUSTUR;
+        return MrpActionType.SATIN_ALMA_TALEBI_OLUSTUR;
     }
 
     private MrpStatus determineMrpStatus(BigDecimal netRequirement, BigDecimal currentStock, BigDecimal safetyStock) {
@@ -505,5 +530,94 @@ public class PlanningService {
         NumberFormat formatter = NumberFormat.getNumberInstance(TR_LOCALE);
         formatter.setMaximumFractionDigits(2);
         return formatter.format(value);
+    }
+
+    public Long getItemIdByCode(String materialCode) {
+        return itemRepository.findByCode(materialCode)
+                .map(com.erp.modules.procurement.entity.Item::getId)
+                .orElse(null);
+    }
+
+    public Long getWarehouseIdByName(String warehouseName) {
+        return warehouseRepository.findByName(warehouseName)
+                .map(com.erp.modules.inventory.entity.Warehouse::getId)
+                .orElse(null);
+    }
+
+    public List<StockMovementDto> getStockMovementsForItem(String materialCode, String warehouse) {
+        Long itemId = getItemIdByCode(materialCode);
+        Long warehouseId = getWarehouseIdByName(warehouse);
+        if (itemId != null && warehouseId != null) {
+            return inventoryService.getStockMovements(itemId, warehouseId);
+        }
+        return List.of();
+    }
+
+    @Transactional
+    public void createPurchaseRequestsFromMrpResults(List<MrpResultDto> results, String username) {
+        results.stream()
+            .filter(result -> result.getActionType() == MrpActionType.SATIN_ALMA_TALEBI_OLUSTUR)
+            .forEach(result -> {
+                PurchaseRequestCreateDto dto = createPurchaseRequestDto(result);
+                purchaseRequestService.create(dto, username);
+            });
+    }
+
+    @Transactional
+    public void createWorkOrdersFromMrpResults(List<MrpResultDto> results, String username) {
+        results.stream()
+            .filter(result -> result.getActionType() == MrpActionType.URETIM_EMRI_OLUSTUR)
+            .forEach(result -> {
+                WorkOrderCreateRequest request = createWorkOrderCreateRequest(result);
+                productionService.createWorkOrder(request, false);
+            });
+    }
+
+    private PurchaseRequestCreateDto createPurchaseRequestDto(MrpResultDto result) {
+        PurchaseRequestCreateDto dto = new PurchaseRequestCreateDto();
+        dto.setDescription("MRP - " + result.getMaterialCode() + " için otomatik satın alma talebi");
+        dto.setDepartment("LOJİSTİK");
+        dto.setRequiredBy(result.getSuggestedDate());
+        
+        PurchaseRequestCreateDto.PurchaseRequestItemDto item = new PurchaseRequestCreateDto.PurchaseRequestItemDto();
+        item.setItemId(null);
+        item.setItemName(result.getMaterialName());
+        item.setItemCode(result.getMaterialCode());
+        item.setQuantity(result.getSuggestedQuantity());
+        item.setUom("Adet");
+        item.setNotes("MRP otomatik önerisi - Net ihtiyaç: " + result.getNetRequirement());
+        
+        dto.setItems(List.of(item));
+        return dto;
+    }
+
+    private WorkOrderCreateRequest createWorkOrderCreateRequest(MrpResultDto result) {
+        LocalDate suggestedDate = result.getSuggestedDate();
+        WorkOrderCreateRequest request = WorkOrderCreateRequest.builder()
+            .productCode(result.getMaterialCode())
+            .plannedQuantity(result.getSuggestedQuantity())
+            .priority(com.erp.modules.production.model.WorkOrderPriority.NORMAL)
+            .productionLineCode("PL001")
+            .responsible("production")
+            .plannedStartDate(suggestedDate)
+            .plannedEndDate(suggestedDate.plusDays(2))
+            .shift("GÜNDÜZ")
+            .description("MRP otomatik üretim emri - " + result.getMaterialName())
+            .build();
+        return request;
+    }
+
+    public List<MrpResultDto> getMrpResultsByIds(List<Long> resultIds) {
+        List<MrpResultDto> allResults = mrpResultsCache;
+        if (allResults == null) {
+            return List.of();
+        }
+        return allResults.stream()
+            .filter(result -> resultIds.contains(getResultId(result)))
+            .collect(Collectors.toList());
+    }
+
+    private Long getResultId(MrpResultDto result) {
+        return Long.valueOf((result.getMaterialCode() + "_" + result.getNetRequirement().setScale(0, RoundingMode.HALF_UP)).hashCode() & 0x7fffffff);
     }
 }

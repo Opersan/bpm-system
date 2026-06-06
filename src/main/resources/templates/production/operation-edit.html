@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title th:text="${pageTitle}">Operasyon Düzenle</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+
+    <div class="erp-page">
+        <div class="erp-page-header">
+            <div>
+                <nav class="erp-breadcrumb" aria-label="breadcrumb">
+                    <a th:href="@{/dashboard}" th:text="${breadcrumbs[0]}">Dashboard</a>
+                    <span th:text="${breadcrumbs[1]}">Üretim</span>
+                    <a th:href="@{/production/operations}" th:text="${breadcrumbs[2]}">Operasyonlar</a>
+                    <span th:text="${breadcrumbs[3]}">Düzenle</span>
+                </nav>
+                <h2 th:text="${pageTitle}">Operasyon Düzenle</h2>
+                <p>Operasyon tanımını ve gerekli malzeme ihtiyaçlarını düzenleyin.</p>
+            </div>
+            <a th:href="@{/production/operations}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Operasyonlara Dön
+            </a>
+        </div>
+
+        <div th:if="${errorMessage}" class="alert alert-danger purchasing-notice">
+            <strong th:text="${errorMessage}">Form hatası</strong>
+            <ul th:if="${#fields.hasAnyErrors()}" class="form-error-list mb-0">
+                <li th:each="error : ${#fields.errors('*')}" th:text="${error}">Hata</li>
+            </ul>
+        </div>
+
+        <form id="operationEditForm" th:action="@{/production/operations/__${operation.id}__}" th:object="${operationRequest}" method="post" novalidate>
+            <input type="hidden" th:field="*{id}" />
+            
+            <div class="row g-4">
+                <div class="col-xl-8">
+                    <!-- Step 1: Basic Operation Information -->
+                    <section class="erp-panel form-section">
+                        <div class="form-section__header">
+                            <div>
+                                <h3>Temel Bilgiler</h3>
+                                <p>Operasyonun temel tanımlama bilgilerini girin.</p>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="code" class="form-label">Operasyon Kodu <span class="text-danger">*</span></label>
+                                <input id="code" type="text" class="form-control" th:field="*{code}"
+                                       th:classappend="${#fields.hasErrors('code')} ? ' is-invalid'"
+                                       placeholder="Örn: OP-CUT">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('code')}" th:errors="*{code}">Kod hatası</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Operasyon Adı <span class="text-danger">*</span></label>
+                                <input id="name" type="text" class="form-control" th:field="*{name}"
+                                       th:classappend="${#fields.hasErrors('name')} ? ' is-invalid'"
+                                       placeholder="Operasyon adı">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Ad hatası</div>
+                            </div>
+                            <div class="col-12">
+                                <label for="description" class="form-label">Açıklama</label>
+                                <textarea id="description" class="form-control" rows="2" th:field="*{description}"
+                                          placeholder="Operasyon açıklaması"></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Step 2: Duration and Settings -->
+                    <section class="erp-panel form-section">
+                        <div class="form-section__header">
+                            <div>
+                                <h3>Süre ve Ayarlar</h3>
+                                <p>Operasyonun süre bilgilerini ve ayarlarını tanımlayın.</p>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="standardDuration" class="form-label">Standart Süre <span class="text-danger">*</span></label>
+                                <input id="standardDuration" type="number" min="0.01" step="0.01" class="form-control"
+                                       th:field="*{standardDuration}"
+                                       th:classappend="${#fields.hasErrors('standardDuration')} ? ' is-invalid'">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('standardDuration')}" th:errors="*{standardDuration}">Süre hatası</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="durationUnit" class="form-label">Süre Birimi <span class="text-danger">*</span></label>
+                                <select id="durationUnit" class="form-select" th:field="*{durationUnit}">
+                                    <option value="MINUTES">Dakika</option>
+                                    <option value="HOURS">Saat</option>
+                                    <option value="DAYS">Gün</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="defaultSequence" class="form-label">Varsayılan Sıra No <span class="text-danger">*</span></label>
+                                <input id="defaultSequence" type="number" min="1" class="form-control"
+                                       th:field="*{defaultSequence}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="workCenter" class="form-label">Çalışma Merkezi</label>
+                                <input id="workCenter" type="text" class="form-control" th:field="*{workCenter}"
+                                       placeholder="Örn: Makine 1">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="capacity" class="form-label">Kapasite</label>
+                                <input id="capacity" type="number" min="0.01" step="0.01" class="form-control"
+                                       th:field="*{capacity}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="capacityUnit" class="form-label">Kapasite Birimi</label>
+                                <input id="capacityUnit" type="text" class="form-control" th:field="*{capacityUnit}"
+                                       placeholder="Örn: Adet/Saat">
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Step 3: Material Requirements -->
+                    <section class="erp-panel form-section">
+                        <div class="form-section__header">
+                            <div>
+                                <h3>Malzeme Gereksinimleri</h3>
+                                <p>Bu operasyon için gereken malzemeleri tanımlayın.</p>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="addMaterialRequirementRow()">
+                                <i class="fas fa-plus me-1"></i>Malzeme Ekle
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table erp-table no-datatable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 30%;">Malzeme</th>
+                                        <th style="width: 15%;">Gerekli Miktar</th>
+                                        <th style="width: 10%;">Birim</th>
+                                        <th style="width: 10%;">İskonto Oranı (%)</th>
+                                        <th style="width: 8%;">Kritik</th>
+                                        <th style="width: 12%;">Açıklama</th>
+                                        <th style="width: 10%;" class="text-end">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="materialRequirementsBody">
+                                    <tr th:each="materialReq, iter : ${operationRequest.materialRequirements}"
+                                        th:attr="data-index=${iter.index}">
+                                        <td>
+                                            <input type="hidden" th:field="*{materialRequirements[__${iter.index}__].id}" />
+                                            <input type="hidden" th:field="*{materialRequirements[__${iter.index}__].itemId}" />
+                                            <input type="hidden" th:field="*{materialRequirements[__${iter.index}__].itemCode}" />
+                                            <input type="hidden" th:field="*{materialRequirements[__${iter.index}__].itemName}" />
+                                            <span class="fw-semibold" th:text="${materialReq.itemName}">Malzeme Adı</span>
+                                        </td>
+                                        <td>
+                                            <input type="number" min="0.001" step="0.001" class="form-control"
+                                                   th:field="*{materialRequirements[__${iter.index}__].requiredQuantity}"
+                                                   th:classappend="${#fields.hasErrors('materialRequirements[' + iter.index + '].requiredQuantity')} ? ' is-invalid'">
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control" th:field="*{materialRequirements[__${iter.index}__].unit}"
+                                                   placeholder="Adet">
+                                        </td>
+                                        <td>
+                                            <input type="number" min="0" max="100" step="0.1" class="form-control"
+                                                   th:field="*{materialRequirements[__${iter.index}__].scrapRate}">
+                                        </td>
+                                        <td>
+                                            <input type="checkbox" class="form-check-input"
+                                                   th:field="*{materialRequirements[__${iter.index}__].isCritical}">
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control" th:field="*{materialRequirements[__${iter.index}__].description}">
+                                        </td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="removeMaterialRequirementRow(this)" th:attr="data-index=${iter.index}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(operationRequest.materialRequirements)}">
+                                        <td colspan="7" class="text-center text-muted">
+                                            Henüz malzeme eklenmedi. "Malzeme Ekle" butonunu kullanın.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <!-- Step 4: Status -->
+                    <section class="erp-panel form-section">
+                        <div class="form-section__header">
+                            <div>
+                                <h3>Durum</h3>
+                                <p>Operasyonun aktif/pasif durumunu ayarlayın.</p>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="active" class="form-label">Durum</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="active" th:field="*{active}">
+                                    <label class="form-check-label" for="active">Aktif</label>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="d-flex justify-content-end gap-3 mt-4">
+                        <a th:href="@{/production/operations}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>İptal
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Kaydet
+                        </button>
+                    </div>
+                </div>
+
+                <div class="col-xl-4">
+                    <aside class="erp-panel purchase-summary">
+                        <div class="purchase-summary__header">
+                            <h5 class="m-0">Özet</h5>
+                        </div>
+                        <div class="purchase-summary__body">
+                            <div class="summary-grid">
+                                <div class="summary-item">
+                                    <span class="text-muted">Operasyon Kodu:</span>
+                                    <span class="fw-semibold" th:text="${operationRequest.code}">OP-001</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="text-muted">Operasyon Adı:</span>
+                                    <span class="fw-semibold" th:text="${operationRequest.name}">Operasyon Adı</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="text-muted">Standart Süre:</span>
+                                    <span class="fw-semibold" th:text="${#numbers.formatDecimal(operationRequest.standardDuration, 1, 2) + ' ' + operationRequest.durationUnit}">30 MINUTES</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="text-muted">Malzeme Sayısı:</span>
+                                    <span class="fw-semibold" th:text="${#lists.size(operationRequest.materialRequirements)}">0</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="text-muted">Durum:</span>
+                                    <span class="badge" th:classappend="${operationRequest.active ? 'bg-success' : 'bg-secondary'}"
+                                          th:text="${operationRequest.active ? 'Aktif' : 'Pasif'}">Aktif</span>
+                                </div>
+                                <div class="summary-item" th:if="${operationRequest.description}">
+                                    <span class="text-muted">Açıklama:</span>
+                                    <span class="fw-semibold" th:text="${operationRequest.description}">Açıklama</span>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">İşlemler</h6>
+                        </div>
+                        <div class="card-body">
+                            <form th:action="@{/production/operations/__${operation.id}__/deactivate}" method="post">
+                                <button type="submit" class="btn btn-outline-danger w-100" 
+                                        th:if="${operation.active}">
+                                    <i class="fas fa-power-off me-2"></i>Pasif Et
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<th:block layout:fragment="extra-scripts">
+    <script th:insert="~{production/operations-form::operation-scripts}"></script>
+</th:block>
+
+</body>
+</html>
