@@ -82,7 +82,7 @@
                         <h3 class="mb-0">Tedarikçi Teklifleri</h3>
                     </div>
                     <div class="table-responsive">
-                        <table class="table erp-table no-datatable mb-0">
+                        <table class="table erp-table erp-quote-table no-datatable mb-0" id="quoteTable">
                             <thead>
                                 <tr>
                                     <th th:if="${canApprove}">Seç</th>
@@ -96,9 +96,10 @@
                             </thead>
                             <tbody>
                                 <tr th:each="quote : ${pr.quotes}"
-                                    th:classappend="${quote.selected} ? ' table-success'">
-                                    <td th:if="${canApprove}">
-                                        <input type="radio" name="selectedQuoteId" class="form-check-input"
+                                    th:classappend="${quote.selected} ? ' selected'"
+                                    th:data-quote-id="${quote.id}">
+                                    <td th:if="${canApprove}" class="quote-selection-cell">
+                                        <input type="radio" name="selectedQuoteId" class="form-check-input quote-radio"
                                                th:value="${quote.id}" th:id="${'q' + quote.id}">
                                     </td>
                                     <td class="fw-semibold" th:text="${quote.supplierName}">—</td>
@@ -148,40 +149,169 @@
                 </section>
 
                 <!-- ==== STEP 3: Approval Form (Manager) ==== -->
-                <section class="erp-panel form-section" th:if="${canApprove}">
+                <section class="erp-panel form-section quote-approval-section" th:if="${canApprove}">
                     <div class="form-section__header">
                         <div>
                             <h3>Teklif Seç ve Onayla</h3>
-                            <p>Yukarıdaki tabloda bir teklif seçin, ardından onaylamak için aşağıdaki formu gönderin.</p>
+                            <p class="small text-muted mb-0">Yukarıdaki tablodan bir teklif seçin ve eylemleri kullanın.</p>
                         </div>
                     </div>
 
-                    <form th:action="@{'/purchase-requests/' + ${pr.id} + '/approve'}" method="post" id="approveForm">
-                        <input type="hidden" name="selectedQuoteId" id="hiddenSelectedQuoteId">
-                        <div class="mb-3">
-                            <label for="approvalNotes" class="form-label">Notlar (opsiyonel)</label>
-                            <textarea id="approvalNotes" name="notes" class="form-control" rows="2"
-                                      placeholder="Onay gerekçesi veya ek bilgi"></textarea>
+                    <!-- Quote Summary Card - Compact, centered layout with buttons at right -->
+                    <div class="quote-summary-card" id="quoteSummaryCard" style="display:none;">
+                        <div class="summary-content">
+                            <div class="summary-header">
+                                <i class="fas fa-file-invoice-dollar me-2 text-primary"></i>
+                                <span class="summary-title">Tedarikçi Teklifi Özeti</span>
+                            </div>
+                            <div class="summary-info">
+                                <div class="summary-row">
+                                    <span class="summary-label">Tedarikçi:</span>
+                                    <span class="summary-value primary" id="summarySupplierName">-</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span class="summary-label">Toplam Tutar:</span>
+                                    <span class="summary-value amount" id="summaryTotalAmount">-</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span class="summary-label">Para Birimi:</span>
+                                    <span class="summary-value" id="summaryCurrency">-</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span class="summary-label">Tahmini Teslim:</span>
+                                    <span class="summary-value" id="summaryDeliveryDate">-</span>
+                                </div>
+                                <div class="summary-row" th:if="${pr.quotes != null and #lists.size(pr.quotes) > 0}">
+                                    <span class="summary-label">Not:</span>
+                                    <span class="summary-value" id="summaryNotes">-</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-success" id="approveBtn" disabled>
+                        <div class="summary-actions">
+                            <button type="button" class="btn btn-outline-danger btn-reject-action" id="rejectBtn">
+                                <i class="fas fa-times me-2"></i>Reddet
+                            </button>
+                            <button type="button" class="btn btn-success btn-approve-action" id="approveBtn" disabled>
                                 <i class="fas fa-check me-2"></i>Onayla ve Sipariş Oluştur
                             </button>
                         </div>
-                    </form>
+                    </div>
 
-                    <hr>
+                    <!-- Quote Summary Placeholder (when no selection) -->
+                    <div class="quote-summary-placeholder" id="quoteSummaryPlaceholder">
+                        <i class="fas fa-info-circle me-2 text-muted"></i>
+                        <span class="text-muted">Onaylamak veya reddetmek için yukarıdaki tablodan bir teklif seçin.</span>
+                    </div>
 
-                    <form th:action="@{'/purchase-requests/' + ${pr.id} + '/reject'}" method="post"
-                          onsubmit="return confirm('Bu talebi reddetmek istediğinize emin misiniz?')">
-                        <div class="mb-3">
-                            <label for="rejectionReason" class="form-label">Red Gerekçesi <span class="text-danger">*</span></label>
-                            <input id="rejectionReason" name="rejectionReason" type="text" class="form-control"
-                                   placeholder="Neden reddediliyor?" required>
+                    <!-- Approve Modal -->
+                    <div class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content erp-modal">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-check-circle text-success me-2"></i>Tedarikçi Teklifi Onayla
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="summary-preview mb-4">
+                                        <h6 class="text-muted small mb-3">Seçilen Teklif</h6>
+                                        <div class="summary-preview-row">
+                                            <span class="summary-label">Tedarikçi:</span>
+                                            <span class="summary-value" id="modalSupplierName">-</span>
+                                        </div>
+                                        <div class="summary-preview-row">
+                                            <span class="summary-label">Toplam Tutar:</span>
+                                            <span class="summary-value amount" id="modalTotalAmount">-</span>
+                                        </div>
+                                        <div class="summary-preview-row">
+                                            <span class="summary-label">Para Birimi:</span>
+                                            <span class="summary-value" id="modalCurrency">-</span>
+                                        </div>
+                                        <div class="summary-preview-row">
+                                            <span class="summary-label">Tahmini Teslim:</span>
+                                            <span class="summary-value" id="modalDeliveryDate">-</span>
+                                        </div>
+                                        <div class="summary-preview-row" id="modalNotesRow">
+                                            <span class="summary-label">Not:</span>
+                                            <span class="summary-value" id="modalNotes">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="modalApprovalNotes" class="form-label">Onay Notları (Opsiyonel)</label>
+                                        <textarea class="form-control" id="modalApprovalNotes" rows="3"
+                                                  placeholder="Ek bilgi veya gerekçe (isteğe bağlı)"></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                        <i class="fas fa-times me-2"></i>Vazgeç
+                                    </button>
+                                    <button type="button" class="btn btn-success" id="confirmApproveBtn">
+                                        <i class="fas fa-check me-2"></i>Onayla ve Sipariş Oluştur
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-outline-danger">
-                            <i class="fas fa-times me-2"></i>Reddet
-                        </button>
+                    </div>
+
+                    <!-- Reject Modal -->
+                    <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content erp-modal">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-exclamation-triangle text-danger me-2"></i>Tedarikçi Teklifini Reddet
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="summary-preview mb-4">
+                                        <h6 class="text-muted small mb-3">Seçilen Teklif</h6>
+                                        <div class="summary-preview-row">
+                                            <span class="summary-label">Tedarikçi:</span>
+                                            <span class="summary-value" id="rejectModalSupplierName">-</span>
+                                        </div>
+                                        <div class="summary-preview-row">
+                                            <span class="summary-label">Toplam Tutar:</span>
+                                            <span class="summary-value amount" id="rejectModalTotalAmount">-</span>
+                                        </div>
+                                        <div class="summary-preview-row">
+                                            <span class="summary-label">Para Birimi:</span>
+                                            <span class="summary-value" id="rejectModalCurrency">-</span>
+                                        </div>
+                                        <div class="summary-preview-row">
+                                            <span class="summary-label">Tahmini Teslim:</span>
+                                            <span class="summary-value" id="rejectModalDeliveryDate">-</span>
+                                        </div>
+                                        <div class="summary-preview-row" id="rejectModalNotesRow">
+                                            <span class="summary-label">Not:</span>
+                                            <span class="summary-value" id="rejectModalNotes">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="modalRejectionReason" class="form-label">Red Gerekçesi <span class="text-danger">*</span></label>
+                                        <textarea class="form-control" id="modalRejectionReason" rows="3"
+                                                  placeholder="Lütfen bu teklifi neden reddettiğinizi açıklayın..." required></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                        <i class="fas fa-times me-2"></i>Vazgeç
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="confirmRejectBtn">
+                                        <i class="fas fa-times me-2"></i>Reddet
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden form for submission -->
+                    <form th:action="@{'/purchase-requests/' + ${pr.id} + '/approve'}" method="post" id="approveForm">
+                        <input type="hidden" name="selectedQuoteId" id="hiddenSelectedQuoteId">
+                        <input type="hidden" name="notes" id="formApprovalNotes">
+                        <input type="hidden" name="rejectionReason" id="formRejectionReason">
                     </form>
                 </section>
 
@@ -305,6 +435,9 @@
         document.querySelectorAll('#supplierDataSource option')
     ).map(o => ({ id: o.value, name: o.text }));
 
+    // Quote quote data for summary display
+    let quoteData = {};
+
     function updateNoQuoteMsg() {
         const container = document.getElementById('quotesContainer');
         const msg = document.getElementById('noQuoteMsg');
@@ -369,26 +502,229 @@
         addQuoteRow(); // auto-add one row
     }
 
-    // Sync selected quote radio to hidden approval input
-    document.addEventListener('change', function(e) {
-        if (e.target && e.target.name === 'selectedQuoteId') {
-            const hidden = document.getElementById('hiddenSelectedQuoteId');
+    // Store quote data from the page
+    document.addEventListener('DOMContentLoaded', function() {
+        const quoteRows = document.querySelectorAll('#quoteTable tbody tr');
+        quoteRows.forEach(function(row) {
+            const quoteId = row.dataset.quoteId;
+            if (quoteId) {
+                quoteData[quoteId] = {
+                    supplierName: row.cells[1]?.textContent || '-',
+                    totalAmount: row.cells[2]?.textContent || '-',
+                    currency: row.cells[3]?.textContent || '-',
+                    estimatedDeliveryDate: row.cells[4]?.textContent || '-',
+                    notes: row.cells[5]?.textContent || '-'
+                };
+            }
+        });
+    });
+
+    // Store selected quote ID
+    let selectedQuoteId = null;
+
+    // Update quote summary card
+    function updateQuoteSummary(quoteId) {
+        const summaryCard = document.getElementById('quoteSummaryCard');
+        const summaryPlaceholder = document.getElementById('quoteSummaryPlaceholder');
+        const summarySupplierName = document.getElementById('summarySupplierName');
+        const summaryTotalAmount = document.getElementById('summaryTotalAmount');
+        const summaryCurrency = document.getElementById('summaryCurrency');
+        const summaryDeliveryDate = document.getElementById('summaryDeliveryDate');
+        const summaryNotes = document.getElementById('summaryNotes');
+
+        if (!summaryCard || !summaryPlaceholder) return;
+
+        if (quoteId && quoteData[quoteId]) {
+            summaryCard.style.display = 'flex';
+            summaryPlaceholder.style.display = 'none';
+            summarySupplierName.textContent = quoteData[quoteId].supplierName;
+            summaryTotalAmount.textContent = quoteData[quoteId].totalAmount;
+            summaryCurrency.textContent = quoteData[quoteId].currency;
+            summaryDeliveryDate.textContent = quoteData[quoteId].estimatedDeliveryDate;
+            summaryNotes.textContent = quoteData[quoteId].notes || '-';
+            selectedQuoteId = quoteId;
+
+            // Enable action buttons
             const approveBtn = document.getElementById('approveBtn');
-            if (hidden) hidden.value = e.target.value;
-            if (approveBtn) approveBtn.disabled = !e.target.value;
+            const rejectBtn = document.getElementById('rejectBtn');
+            if (approveBtn) approveBtn.disabled = false;
+            if (rejectBtn) rejectBtn.disabled = false;
+        } else {
+            summaryCard.style.display = 'none';
+            summaryPlaceholder.style.display = 'block';
+            selectedQuoteId = null;
+
+            // Disable action buttons
+            const approveBtn = document.getElementById('approveBtn');
+            const rejectBtn = document.getElementById('rejectBtn');
+            if (approveBtn) approveBtn.disabled = true;
+            if (rejectBtn) rejectBtn.disabled = true;
+        }
+    }
+
+    // Handle row click selection
+    function handleQuoteSelection(row, radioInput) {
+        // Remove selected class from all rows
+        const quoteRows = document.querySelectorAll('#quoteTable tbody tr');
+        quoteRows.forEach(function(r) {
+            r.classList.remove('selected');
+        });
+
+        // Uncheck all radio buttons
+        const allRadios = document.querySelectorAll('input[name="selectedQuoteId"]');
+        allRadios.forEach(function(r) {
+            r.checked = false;
+        });
+
+        // Select the clicked row and radio
+        if (row && radioInput) {
+            row.classList.add('selected');
+            radioInput.checked = true;
+
+            // Update hidden form input
+            const hiddenInput = document.getElementById('hiddenSelectedQuoteId');
+            if (hiddenInput) {
+                hiddenInput.value = radioInput.value;
+            }
+
+            // Update summary card
+            updateQuoteSummary(radioInput.value);
+        }
+    }
+
+    // Show approve modal
+    document.getElementById('approveBtn')?.addEventListener('click', function() {
+        const quoteDataItem = quoteData[selectedQuoteId];
+        if (!quoteDataItem) return;
+
+        // Populate modal data
+        document.getElementById('modalSupplierName').textContent = quoteDataItem.supplierName;
+        document.getElementById('modalTotalAmount').textContent = quoteDataItem.totalAmount;
+        document.getElementById('modalCurrency').textContent = quoteDataItem.currency;
+        document.getElementById('modalDeliveryDate').textContent = quoteDataItem.estimatedDeliveryDate;
+        
+        const modalNotes = document.getElementById('modalNotes');
+        const modalNotesRow = document.getElementById('modalNotesRow');
+        if (quoteDataItem.notes && quoteDataItem.notes.trim() !== '-') {
+            modalNotes.textContent = quoteDataItem.notes;
+            modalNotesRow.style.display = 'flex';
+        } else {
+            modalNotes.textContent = '-';
+            modalNotesRow.style.display = 'none';
+        }
+
+        // Clear notes textarea
+        document.getElementById('modalApprovalNotes').value = '';
+
+        // Show modal
+        const modalEl = document.getElementById('approveModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    });
+
+    // Show reject modal
+    document.getElementById('rejectBtn')?.addEventListener('click', function() {
+        const quoteDataItem = quoteData[selectedQuoteId];
+        if (!quoteDataItem) return;
+
+        // Populate modal data
+        document.getElementById('rejectModalSupplierName').textContent = quoteDataItem.supplierName;
+        document.getElementById('rejectModalTotalAmount').textContent = quoteDataItem.totalAmount;
+        document.getElementById('rejectModalCurrency').textContent = quoteDataItem.currency;
+        document.getElementById('rejectModalDeliveryDate').textContent = quoteDataItem.estimatedDeliveryDate;
+
+        const modalNotes = document.getElementById('rejectModalNotes');
+        const modalNotesRow = document.getElementById('rejectModalNotesRow');
+        if (quoteDataItem.notes && quoteDataItem.notes.trim() !== '-') {
+            modalNotes.textContent = quoteDataItem.notes;
+            modalNotesRow.style.display = 'flex';
+        } else {
+            modalNotes.textContent = '-';
+            modalNotesRow.style.display = 'none';
+        }
+
+        // Clear rejection reason textarea
+        document.getElementById('modalRejectionReason').value = '';
+
+        // Show modal
+        const modalEl = document.getElementById('rejectModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    });
+
+    // Handle confirm approve button
+    document.getElementById('confirmApproveBtn')?.addEventListener('click', function() {
+        const notes = document.getElementById('modalApprovalNotes').value;
+        const formApprovalNotes = document.getElementById('formApprovalNotes');
+        if (formApprovalNotes) {
+            formApprovalNotes.value = notes;
+        }
+
+        // Submit form
+        const approveForm = document.getElementById('approveForm');
+        if (approveForm) {
+            approveForm.submit();
         }
     });
 
-    const approveForm = document.getElementById('approveForm');
-    if (approveForm) {
-        approveForm.addEventListener('submit', function(e) {
-            const selectedQuoteId = document.getElementById('hiddenSelectedQuoteId')?.value;
-            if (!selectedQuoteId) {
-                e.preventDefault();
-                alert('Lütfen onaylamak istediğiniz teklifi seçin.');
+    // Handle confirm reject button
+    document.getElementById('confirmRejectBtn')?.addEventListener('click', function() {
+        const rejectionReason = document.getElementById('modalRejectionReason').value.trim();
+        
+        // Validate rejection reason (required)
+        if (!rejectionReason) {
+            alert('Lütfen teklifi reddetme nedenini belirtin.');
+            return;
+        }
+
+        const formRejectionReason = document.getElementById('formRejectionReason');
+        if (formRejectionReason) {
+            formRejectionReason.value = rejectionReason;
+        }
+
+        // Submit form
+        const approveForm = document.getElementById('approveForm');
+        if (approveForm) {
+            approveForm.submit();
+        }
+    });
+
+    // Attach click events to quote rows
+    const quoteTable = document.getElementById('quoteTable');
+    if (quoteTable) {
+        quoteTable.addEventListener('click', function(e) {
+            const row = e.target.closest('tr');
+            if (!row || !row.dataset.quoteId) return;
+
+            const radioInput = row.querySelector('.quote-radio');
+            if (radioInput && !radioInput.disabled) {
+                handleQuoteSelection(row, radioInput);
+            }
+        });
+
+        // Also handle direct radio clicks
+        quoteTable.addEventListener('change', function(e) {
+            if (e.target && e.target.name === 'selectedQuoteId') {
+                const radioInput = e.target;
+                const row = radioInput.closest('tr');
+                handleQuoteSelection(row, radioInput);
             }
         });
     }
+
+    // Keyboard navigation for accessibility
+    quoteTable?.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            const focusedElement = document.activeElement;
+            if (focusedElement && focusedElement.classList.contains('quote-radio')) {
+                const row = focusedElement.closest('tr');
+                if (row) {
+                    e.preventDefault();
+                    handleQuoteSelection(row, focusedElement);
+                }
+            }
+        }
+    });
 /*]]>*/
 </script>
 </th:block>

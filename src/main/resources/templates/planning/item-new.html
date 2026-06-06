@@ -84,11 +84,11 @@
                             <h3>Kalem Özeti</h3>
                             <span>Planlama</span>
                         </div>
-                        <div class="summary-row"><span>Kod</span><strong th:text="${itemCreateRequest.code != null and !itemCreateRequest.code.isBlank() ? itemCreateRequest.code : '-'}">-</strong></div>
-                        <div class="summary-row"><span>Ad</span><strong th:text="${itemCreateRequest.name != null and !itemCreateRequest.name.isBlank() ? itemCreateRequest.name : '-'}">-</strong></div>
-                        <div class="summary-row"><span>Birim</span><strong th:text="${itemCreateRequest.uom != null and !itemCreateRequest.uom.isBlank() ? itemCreateRequest.uom : '-'}">-</strong></div>
-                        <div class="summary-row"><span>Fiyat</span><strong th:text="${itemCreateRequest.price != null ? #numbers.formatDecimal(itemCreateRequest.price, 1, 2) + ' TRY' : '-'}">-</strong></div>
-                        <div class="summary-row summary-row--total"><span>Kategori</span><strong>Kod ve açıklamadan otomatik türetilir</strong></div>
+                        <div class="summary-row"><span>Kod</span><strong id="summary-code">-</strong></div>
+                        <div class="summary-row"><span>Ad</span><strong id="summary-name">-</strong></div>
+                        <div class="summary-row"><span>Birim</span><strong id="summary-uom">-</strong></div>
+                        <div class="summary-row"><span>Fiyat</span><strong id="summary-price">-</strong></div>
+                        <div class="summary-row summary-row--total"><span>Kategori</span><strong id="summary-category">Kod ve açıklamadan otomatik türetilir</strong></div>
 
                         <div class="purchase-actions">
                             <a th:href="@{/planning/inventory}" class="btn btn-light">Vazgeç</a>

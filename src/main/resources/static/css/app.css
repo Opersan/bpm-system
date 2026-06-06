@@ -1108,6 +1108,282 @@ body.sidebar-toggled .content-wrapper {
     background: #fafbfc;
 }
 
+/* Quote row selection styles */
+.erp-quote-table tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.erp-quote-table tbody tr:hover {
+    background-color: #eef2f7;
+}
+
+.erp-quote-table tbody tr.selected {
+    background-color: #e3f2fd;
+    border-left: 3px solid var(--primary-color);
+}
+
+.erp-quote-table tbody tr.selected:hover {
+    background-color: #dbe7f8;
+}
+
+.erp-quote-table tbody tr td {
+    border-color: #edf0f5;
+}
+
+.erp-quote-table tbody tr.selected td {
+    border-color: #90caf9;
+}
+
+/* Approval card styles */
+.quote-approval-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Quote Summary Card - Compact layout with summary-actions */
+.quote-summary-card {
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, #f0f7ff 0%, #e6f0fb 100%);
+    border: 2px solid var(--primary-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(78, 115, 223, 0.15);
+}
+
+.quote-summary-card .summary-content {
+    flex: 1;
+}
+
+.quote-summary-card .summary-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+.quote-summary-card .summary-header i {
+    font-size: 1.2rem;
+}
+
+.quote-summary-card .summary-header .summary-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 0.5rem;
+}
+
+.quote-summary-card .summary-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.quote-summary-card .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+}
+
+.quote-summary-card .summary-label {
+    color: #4a5568;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.quote-summary-card .summary-value {
+    font-weight: 700;
+    color: #1a202c;
+    font-size: 1rem;
+    text-align: right;
+}
+
+.quote-summary-card .summary-value.primary {
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+.quote-summary-card .summary-value.amount {
+    color: #2d3748;
+    font-size: 1.1rem;
+}
+
+.quote-summary-card .summary-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    border-top: 1px solid rgba(78, 115, 223, 0.2);
+    padding-top: 1rem;
+}
+
+/* Quote Summary Placeholder */
+.quote-summary-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+    background: #f8f9fc;
+    border: 2px dashed #e2e8f0;
+    border-radius: 12px;
+    color: #718096;
+    font-weight: 500;
+}
+
+.quote-summary-placeholder i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+/* Approve Button (new) */
+.btn-approve-action {
+    flex: 1;
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    color: #ffffff;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.btn-approve-action:hover:not(:disabled) {
+    background-color: #17a673;
+    border-color: #17a673;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(28, 200, 138, 0.3);
+}
+
+.btn-approve-action:disabled {
+    background-color: #a0aec0;
+    border-color: #a0aec0;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Reject Button (new) */
+.btn-reject-action {
+    flex: 1;
+    background-color: transparent;
+    border: 2px solid var(--danger-color);
+    color: var(--danger-color);
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.btn-reject-action:hover:not(:disabled) {
+    background-color: var(--danger-color);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(231, 74, 59, 0.3);
+}
+
+.btn-reject-action:disabled {
+    border-color: #a0aec0;
+    color: #a0aec0;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Approval actions with better spacing */
+.approval-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.approval-actions .approval-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.approval-actions .section-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #667386;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.5px;
+}
+
+.approval-actions .btn-approve {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    color: #ffffff;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.approval-actions .btn-approve:hover {
+    background-color: #17a673;
+    border-color: #17a673;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(28, 200, 138, 0.3);
+}
+
+.approval-actions .btn-approve:disabled {
+    background-color: #a0aec0;
+    border-color: #a0aec0;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.approval-actions .btn-reject {
+    background-color: #fff5f5;
+    border: 2px solid var(--danger-color);
+    color: var(--danger-color);
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.approval-actions .btn-reject:hover {
+    background-color: var(--danger-color);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(231, 74, 59, 0.3);
+}
+
+.approval-actions .form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+}
+
+.approval-actions .form-control {
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.approval-actions .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+}
+
+.approval-actions .btn-reject:focus,
+.approval-actions .btn-approve:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Make rejection textarea same style as approval textarea */
+.approval-actions textarea.form-control {
+    resize: vertical;
+    min-height: 60px;
+}
+
 .purchase-items-table th,
 .purchase-items-table td {
     white-space: nowrap;
@@ -1343,6 +1619,49 @@ body.sidebar-toggled .content-wrapper {
 .erp-modal {
     border: 0;
     border-radius: 8px;
+}
+
+/* Quote Approval Modals */
+.summary-preview {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+}
+
+.summary-preview .summary-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #718096;
+    margin-bottom: 0;
+}
+
+.summary-preview .summary-value {
+    font-weight: 700;
+    color: #1a202c;
+    font-size: 1rem;
+    text-align: right;
+}
+
+.summary-preview .summary-value.primary {
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+.summary-preview .summary-value.amount {
+    color: #2d3748;
+    font-size: 1.1rem;
+}
+
+.summary-preview-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.summary-preview-row:last-child {
+    border-bottom: none;
 }
 
 @media (max-width: 1199.98px) {

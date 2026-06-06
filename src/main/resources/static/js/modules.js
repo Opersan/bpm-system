@@ -198,6 +198,88 @@ $(document).ready(function() {
         });
     }
 
+    // --- Planning Module ---
+
+    // New Item Form - Dynamic Summary Card Updates
+    if ($('#code').length) {
+        // Helper function to format price with Turkish Lira symbol
+        function formatPrice(value) {
+            if (!value || value === '') return '-';
+            
+            const number = parseFloat(value);
+            if (isNaN(number)) return '-';
+            
+            // Format with 2 decimal places and Turkish Lira symbol
+            return number.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+        }
+        
+        // Helper function to check if value is empty
+        function isEmpty(value) {
+            return value === null || value === undefined || value.trim() === '';
+        }
+        
+        // Helper function to determine category from code and description
+        function determineCategory(code, description) {
+            const codeLower = (code || '').toLowerCase();
+            const descLower = (description || '').toLowerCase();
+            
+            // Check for category keywords in code or description
+            if (codeLower.includes('makine') || descLower.includes('makine') || descLower.includes('machine')) {
+                return 'Makine';
+            } else if (codeLower.includes('malzeme') || descLower.includes('malzeme') || descLower.includes('material')) {
+                return 'Malzeme';
+            } else if (codeLower.includes('parça') || descLower.includes('parça') || descLower.includes('part') || descLower.includes('piece')) {
+                return 'Parça';
+            } else if (codeLower.includes('ürün') || descLower.includes('ürün') || descLower.includes('product')) {
+                return 'Ürün';
+            } else if (codeLower.includes('ambalaj') || descLower.includes('ambalaj') || descLower.includes('packaging') || descLower.includes('package')) {
+                return 'Ambalaj';
+            } else {
+                return 'Genel';
+            }
+        }
+        
+        // Update summary card
+        function updateSummary() {
+            // Update code
+            if (isEmpty($('#code').val())) {
+                $('#summary-code').text('-');
+            } else {
+                $('#summary-code').text($('#code').val());
+            }
+            
+            // Update name
+            if (isEmpty($('#name').val())) {
+                $('#summary-name').text('-');
+            } else {
+                $('#summary-name').text($('#name').val());
+            }
+            
+            // Update UOM
+            if (isEmpty($('#uom').val())) {
+                $('#summary-uom').text('-');
+            } else {
+                $('#summary-uom').text($('#uom').val());
+            }
+            
+            // Update price
+            $('#summary-price').text(formatPrice($('#price').val()));
+            
+            // Update category based on code and description
+            $('#summary-category').text(determineCategory($('#code').val(), $('#description').val()));
+        }
+        
+        // Add event listeners to all form fields
+        $('#code').on('input', updateSummary);
+        $('#name').on('input', updateSummary);
+        $('#uom').on('change', updateSummary);
+        $('#price').on('input', updateSummary);
+        $('#description').on('input', updateSummary);
+        
+        // Initialize summary on page load (in case of validation errors and page reload)
+        updateSummary();
+    }
+
 });
 
 // Global Functions (outside document.ready to be accessible)

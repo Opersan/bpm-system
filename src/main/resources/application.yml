@@ -60,6 +60,9 @@ logging:
     com.erp: DEBUG
     org.springframework.web: INFO
 
+server:
+  shutdown: immediate
+
 ---
 spring:
   config:
@@ -80,3 +83,6 @@ spring:
 logging:
   level:
     com.erp: INFO
+
+server:
+  shutdown: immediate
