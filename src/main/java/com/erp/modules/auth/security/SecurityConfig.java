@@ -49,7 +49,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers("/api/auth/**").permitAll()
                                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
-                    .requestMatchers("/login", "/auth/**", "/unauthorized", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
+                    .requestMatchers("/login", "/auth/**", "/unauthorized", "/css/**", "/js/**", "/images/**", "/webjars/**", "/h2-console/**").permitAll()
                     .anyRequest().permitAll()
                 )
                 .logout(logout -> logout
@@ -57,6 +57,9 @@ public class SecurityConfig {
                         .logoutSuccessUrl("/login?logout")
                         .permitAll()
                 );
+
+        // Allow H2 Console to work with frames (for local development)
+        http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
         http.authenticationProvider(authenticationProvider());
 

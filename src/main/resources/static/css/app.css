@@ -1124,6 +1124,7 @@ body.sidebar-toggled .content-wrapper {
 /* Ensure table responsive area allows dropdown to overflow */
 .erp-panel .table-responsive {
     position: relative;
+    overflow: visible !important;
 }
 
 .erp-quote-table tbody tr:hover {

@@ -10,7 +10,7 @@ spring:
     activate:
       on-profile: local
   datasource:
-    url: jdbc:h2:file:./data/erp_db;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;NON_KEYWORDS=VALUE;AUTO_SERVER=TRUE;CHARSET=UTF-8
+    url: jdbc:h2:file:./data/erp_db;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;NON_KEYWORDS=VALUE
     username: sa
     password:
     driver-class-name: org.h2.Driver
@@ -33,6 +33,7 @@ spring:
     init:
       mode: always
       data-locations: classpath:db/demo-data.sql
+      encoding: UTF-8
 
 ---
 spring:

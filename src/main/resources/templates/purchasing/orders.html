@@ -159,7 +159,7 @@
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
                                             </div>
                                             <div class="modal-body text-start">
-Z                                                <form th:action="@{/purchasing/orders/receive}" method="post" id="receiveForm" th:attr="data-index=${iter.index}">
+                                                 <form th:action="@{/purchasing/orders/receive}" method="post" id="receiveForm" class="receive-form">
                                                     <input type="hidden" name="purchaseOrderId" th:value="${order.id}">
                                                     <div class="mb-3">
                                                         <label for="warehouseId-[[${iter.index}]]" class="form-label">Depo</label>
@@ -200,7 +200,7 @@ Z                                                <form th:action="@{/purchasing/
                                             </div>
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                                                <button type="button" class="btn btn-success" th:attr="onclick='submitReceiveForm(' + ${iter.index} + ')'">Teslim Al</button>
+                                                <button type="button" class="btn btn-success receive-btn">Teslim Al</button>
                                             </div>
                                         </div>
                                     </div>
@@ -268,34 +268,60 @@ Z                                                <form th:action="@{/purchasing/
 
 </div>
 
-<script th:inline="none">
-function submitReceiveForm(index) {
-    const form = document.getElementById('receiveForm');
-    if (form) {
-        // Validate warehouse selection
-        const warehouseSelect = document.getElementById('warehouseId-' + index);
-        if (!warehouseSelect || !warehouseSelect.value) {
-            alert('Lütfen bir depo seçin.');
-            return;
-        }
-        
-        // Validate at least one item has quantity
-        let hasQuantity = false;
-        const inputs = form.querySelectorAll('input[name*=".quantity"]');
-        inputs.forEach(input => {
-            if (parseInt(input.value) > 0) {
-                hasQuantity = true;
-            }
+<script>
+// Handle receiving form submission for each modal
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all receive modal buttons
+    const receiveModalButtons = document.querySelectorAll('[data-bs-toggle="modal"]');
+    
+    receiveModalButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Find the modal that will be shown
+            const targetModalId = this.getAttribute('data-bs-target');
+            if (!targetModalId) return;
+            
+            const modalElement = document.querySelector(targetModalId);
+            if (!modalElement) return;
+            
+            // Add submit handler to the form in this modal
+            const form = modalElement.querySelector('.receive-form');
+            if (!form) return;
+            
+            // Remove any existing handlers by cloning the form
+            const newForm = form.cloneNode(true);
+            form.parentNode.replaceChild(newForm, form);
+            
+            // Add submit handler
+            newForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Validate warehouse
+                const warehouseSelect = newForm.querySelector('select[name="warehouseId"]');
+                if (!warehouseSelect || !warehouseSelect.value) {
+                    alert('Lütfen bir depo seçin.');
+                    return;
+                }
+                
+                // Validate at least one item has quantity
+                const inputs = newForm.querySelectorAll('input[name*=".quantity"]');
+                let hasQuantity = false;
+                inputs.forEach(input => {
+                    if (parseInt(input.value) > 0) {
+                        hasQuantity = true;
+                    }
+                });
+                
+                if (!hasQuantity) {
+                    alert('Lütfen en az bir ürün için alım miktarı girin.');
+                    return;
+                }
+                
+                // Submit the form
+                newForm.submit();
+            });
         });
-        
-        if (!hasQuantity) {
-            alert('Lütfen en az bir ürün için alım miktarı girin.');
-            return;
-        }
-        
-        form.submit();
-    }
-}
+    });
+});
 </script>
 
 </body>
